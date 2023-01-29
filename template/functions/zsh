@@ -1,0 +1,17 @@
+###############
+# Define Func #
+###############
+
+{{ name }} () {
+  {% for argument in arguments %}
+  readonly {{ argument }}=${ {{- loop.index }}:?"Must specify {{ argument }}."}
+  {% endfor %}
+
+  {{ command }}
+}
+
+############
+# Run Func #
+############
+
+{{ name }} "$@"
