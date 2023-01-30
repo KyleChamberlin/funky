@@ -2,8 +2,14 @@
 name = "funky"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Turn command history into reusable shell functions."
+repository = "https://github.com/kylechamberlin/funky"
+homepage = "https://ktc.sh/funky"
+readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+strip = true
 
 [dependencies]
 clap = { version = "4.1.4", features = ["derive", "env", "unicode", "cargo"] }
