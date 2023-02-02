@@ -1,0 +1,2 @@
+fpath=({{ funky_dir }} $fpath);
+autoload -Uz $fpath[1]/*(.:t)

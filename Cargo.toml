@@ -8,6 +8,14 @@ repository = "https://github.com/kylechamberlin/funky"
 homepage = "https://ktc.sh/funky"
 readme = "README.md"
 
+[[bin]]
+name = "funky"
+path = "src/main.rs"
+
+[lib]
+name = "funky_lib"
+path = "src/lib.rs"
+
 [profile.release]
 strip = true
 
@@ -20,3 +28,4 @@ lazy_static = "1.4.0"
 serde_json = "1.0.91"
 serde = { version = "1.0.152", features = ["derive"] }
 shellexpand = { version = "3.0.0", features = ["path", "full"] }
+color-eyre = "0.6.2"

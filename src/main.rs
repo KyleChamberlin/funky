@@ -1,83 +1,33 @@
-use std::{fs, path::PathBuf};
-
 use clap::Parser;
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
-use shellexpand;
-use tera::{Context, Tera};
+use color_eyre::Result;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about)]
-struct Args {
-    #[arg(long, env, default_value = "~/.zsh_history")]
-    histfile: PathBuf,
+use funky_lib::commands;
+use funky_lib::config::{Args, Sub};
+use funky_lib::file::get_dir;
 
-    #[arg(long, env, default_value = "~/.funky/")]
-    funky_dir: String,
-}
+fn setup_cli_nice_to_haves() -> Result<()> {
+    color_eyre::install()?;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Func {
-    name: String,
-    arguments: Vec<String>,
-    command: String,
-}
-
-fn main() {
     ctrlc::set_handler(move || {
-        println!("Exiting early.");
-    })
-    .expect("Error setting Ctrl-C handler");
+        println!("Ctrl+C recieved, terminating.");
+    })?;
 
-    let _args = Args::parse();
-
-    let histfile_contents =
-        fs::read_to_string(_args.histfile.as_path()).expect("Histfile should exist");
-
-    let last_entry = histfile_contents.lines().rev().nth(1).unwrap();
-
-    let func = Func {
-        name: "cmd".to_string(),
-        arguments: vec!["arg1".to_string(), "arg2".to_string()],
-        command: last_entry.to_string(),
-    };
-
-    let _function_out = TERA
-        .render(
-            "functions/zsh",
-            &Context::from_serialize(func).expect("failed to serialize context"),
-        )
-        .expect("failed to render template into string");
-
-    let funky_dir = get_dir(_args.funky_dir);
-
-    dbg!(funky_dir);
+    Ok(())
 }
 
-fn get_dir(path: String) -> PathBuf {
-    let expanded_path = shellexpand::full(&path).expect("Failed to expand path.");
-    let dir = PathBuf::from(expanded_path.to_string());
+fn main() -> Result<()> {
+    setup_cli_nice_to_haves()?;
 
-    if dir.exists() {
-        if !dir.is_dir() {
-            panic!("provided path is not a directory.");
-        }
-    } else {
-        fs::create_dir_all(&dir).expect("unable to create dir");
-    };
+    let args = Args::parse();
 
-    return dir;
-}
+    let funky_dir = get_dir(args.funky_dir)?;
 
-lazy_static! {
-    pub static ref TERA: Tera = {
-        let tera = match Tera::new("template/**/*") {
-            Ok(t) => t,
-            Err(e) => {
-                println!("Parsing error(s): {}", e);
-                ::std::process::exit(127);
-            }
-        };
-        tera
-    };
+    match args.command {
+        Sub::Zsh {
+            completion: _,
+            rc_file: _,
+        } => todo!(),
+        Sub::List => todo!(),
+        Sub::New(function) => commands::new::new(&funky_dir, function),
+    }
 }
