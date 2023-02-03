@@ -23,11 +23,7 @@ fn main() -> Result<()> {
     let funky_dir = get_dir(args.funky_dir)?;
 
     match args.command {
-        Sub::Zsh {
-            completion: _,
-            rc_file: _,
-        } => todo!(),
-        Sub::List => todo!(),
         Sub::New(function) => commands::new::new(&funky_dir, function),
+        _ => todo!(),
     }
 }

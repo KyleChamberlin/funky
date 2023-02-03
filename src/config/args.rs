@@ -17,7 +17,10 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Sub {
-    Zsh {
+    Init {
+        #[arg(default_value = "zsh")]
+        shell: String,
+
         #[arg(long)]
         completion: bool,
 
@@ -26,4 +29,5 @@ pub enum Sub {
     },
     New(new::Args),
     List,
+    Edit,
 }
