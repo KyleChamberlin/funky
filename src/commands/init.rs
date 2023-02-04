@@ -1,7 +1,5 @@
 use clap::{Parser, ValueEnum};
 
-
-
 #[derive(Debug, Parser)]
 pub struct Args {
     #[arg()]
