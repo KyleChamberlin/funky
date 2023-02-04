@@ -6,7 +6,7 @@ lazy_static! {
         let tera = match Tera::new("template/**/*") {
             Ok(t) => t,
             Err(e) => {
-                println!("Parsing error(s): {}", e);
+                println!("Parsing error(s): {e}");
                 ::std::process::exit(127);
             }
         };
