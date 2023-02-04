@@ -1,4 +1,4 @@
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use std::{fs, path::PathBuf};
 
 pub fn get_dir(path: String) -> Result<PathBuf> {
