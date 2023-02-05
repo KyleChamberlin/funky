@@ -22,7 +22,7 @@ lto = true
 
 [dependencies]
 clap = { version = "4.1.4", features = ["derive", "env", "unicode", "cargo"] }
-ctrlc = { version = "3.2.4", features = ["termination"] }
+ctrlc = { version = "3.2.5", features = ["termination"] }
 tera = "1.17.1"
 lazy_static = "1.4.0"
 serde = { version = "1.0.152", features = ["derive"] }
