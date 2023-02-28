@@ -1,3 +1,5 @@
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::{
   fs::{self},
   path::PathBuf,
@@ -51,14 +53,12 @@ struct Func {
   command: String,
 }
 
-pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
-  dbg!(&funky_dir);
-
+pub fn new(funky_dir: PathBuf, args: Args) -> Result<()> {
   let command = match args.source {
     FunctionSource::History => {
-      let histfile_contents = fs::read_to_string(get_file(args.history_file)?)?;
+      let history_contents = fs::read_to_string(get_file(args.history_file)?)?;
 
-      match histfile_contents.lines().rev().nth(1) {
+      match history_contents.lines().rev().nth(1) {
         Some(s) => Ok(s.to_string()),
         None => Err(eyre!("Unable to find command from HISTORY_FILE")),
       }
@@ -70,6 +70,13 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
       None => Err(eyre!("No Vargs provided for SOURCE Vargs.")),
     },
   }?;
+  
+  let mut parts: Vec<&str> = vec![];
+  for part in command.split(" ") {
+    parts.push(part);
+  }
+  
+  dbg!(&parts);
 
   let func = Func {
     name: args.name.clone(),
@@ -77,7 +84,17 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
     command,
   };
 
+  let function_path = funky_dir.join(args.name);
+
   let _function_out = TEMPLATES.render("functions/zsh", &Context::from_serialize(&func)?)?;
 
-  Ok(())
+  match OpenOptions::new()
+    .write(true)
+    .create(true)
+    .open(function_path)?
+    .write_all(_function_out.as_ref())
+  {
+    Ok(..) => Ok(()),
+    Err(e) => Err(eyre!(e)),
+  }
 }

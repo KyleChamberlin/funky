@@ -23,7 +23,7 @@ fn main() -> Result<()> {
   let funky_dir = get_dir(args.funky_dir)?;
 
   match args.command {
-    Sub::New(function) => commands::new::new(&funky_dir, function),
+    Sub::New(function) => commands::new::new(funky_dir, function),
     _ => todo!(),
   }
 }
