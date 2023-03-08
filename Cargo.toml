@@ -23,7 +23,7 @@ lto = true
 [dependencies]
 clap = { version = "4.1.8", features = ["derive", "env", "unicode", "cargo"] }
 ctrlc = { version = "3.2.5", features = ["termination"] }
-tera = "1.17.1"
+tera = "1.18.0"
 lazy_static = "1.4.0"
 serde = { version = "1.0.154", features = ["derive"] }
 shellexpand = { version = "3.0.0", features = ["path", "full"] }
