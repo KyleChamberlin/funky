@@ -28,4 +28,4 @@ lazy_static = "1.4.0"
 serde = { version = "1.0.160", features = ["derive"] }
 shellexpand = { version = "3.1.0", features = ["path", "full"] }
 color-eyre = "0.6.2"
-inquire = { version = "0.6.1", features = ["editor"] }
+inquire = { version = "0.6.2", features = ["editor"] }
