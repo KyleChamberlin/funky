@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:base"
   ],
   "schedule": [
     "before 11pm",
@@ -14,14 +14,14 @@
         "patch"
       ],
       "automerge": true,
-      "automergeType": "pr",
+      "automergeType": "pr"
     },
   ],
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,
     "automergeType": "pr",
-    "platformAutomerge": true,
+    "platformAutomerge": true
   },
-  "timezone": "America/Detroit",
+  "timezone": "America/Detroit"
 }
