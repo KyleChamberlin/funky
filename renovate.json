@@ -15,7 +15,7 @@
       ],
       "automerge": true,
       "automergeType": "pr"
-    },
+    }
   ],
   "lockFileMaintenance": {
     "enabled": true,
