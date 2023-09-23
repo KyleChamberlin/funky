@@ -19,4 +19,4 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rust-lang/audit@v1.1.6
+      - uses: actions-rust-lang/audit@v1.1.8
