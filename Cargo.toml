@@ -21,7 +21,7 @@ strip = true
 lto = true
 
 [dependencies]
-clap = { version = "4.4.5", features = ["derive", "env", "unicode", "cargo"] }
+clap = { version = "4.4.6", features = ["derive", "env", "unicode", "cargo"] }
 ctrlc = { version = "3.4.1", features = ["termination"] }
 tera = "1.19.1"
 lazy_static = "1.4.0"
