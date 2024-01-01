@@ -10,11 +10,11 @@ pub struct Args {
   pub funky_dir: String,
 
   #[command(subcommand)]
-  pub command: Sub,
+  pub command: Command,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum Sub {
+pub enum Command {
   Init {
     #[arg(default_value = "zsh")]
     shell: String,
