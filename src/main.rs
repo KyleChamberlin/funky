@@ -2,7 +2,7 @@ use clap::Parser;
 use color_eyre::Result;
 
 use funky_lib::commands;
-use funky_lib::config::{Args, Sub};
+use funky_lib::config::{Args, Command};
 use funky_lib::file::get_dir;
 
 fn setup_cli_nice_to_haves() -> Result<()> {
@@ -23,7 +23,7 @@ fn main() -> Result<()> {
   let funky_dir = get_dir(args.funky_dir)?;
 
   match args.command {
-    Sub::New(function) => commands::new::new(&funky_dir, function),
+    Command::New(function) => commands::new::new(&funky_dir, function),
     _ => todo!(),
   }
 }

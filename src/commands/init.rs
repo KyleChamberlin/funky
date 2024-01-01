@@ -5,7 +5,7 @@ pub struct Args {
   #[arg()]
   name: String,
 
-  #[arg(value_enum, default_value = "zsh")]
+  #[arg(value_enum, default_value = "fish")]
   shell: Shell,
 
   /// if another function is found in FUNKY_DIR with the same NAME,
@@ -22,6 +22,7 @@ pub struct Args {
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum Shell {
+  Fish,
   Zsh,
   Bash,
   Powershell,
