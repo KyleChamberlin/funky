@@ -25,7 +25,7 @@ clap = { version = "4.4.12", features = ["derive", "env", "unicode", "cargo"] }
 ctrlc = { version = "3.4.2", features = ["termination"] }
 tera = "1.19.1"
 lazy_static = "1.4.0"
-serde = { version = "1.0.193", features = ["derive"] }
+serde = { version = "1.0.194", features = ["derive"] }
 shellexpand = { version = "3.1.0", features = ["path", "full"] }
 color-eyre = "0.6.2"
 inquire = { version = "0.6.2", features = ["editor"] }
