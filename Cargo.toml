@@ -27,5 +27,5 @@ tera = "1.19.1"
 lazy_static = "1.4.0"
 serde = { version = "1.0.197", features = ["derive"] }
 shellexpand = { version = "3.1.0", features = ["path", "full"] }
-color-eyre = "0.6.2"
+color-eyre = "0.6.3"
 inquire = { version = "0.7.1", features = ["editor"] }
