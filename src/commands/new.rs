@@ -77,7 +77,9 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
     command,
   };
 
-  let _function_out = TEMPLATES.render("functions/zsh", &Context::from_serialize(&func)?)?;
+  let _function_out = TEMPLATES.render("functions/zsh", &Context::from_serialize(func)?)?;
+
+  println!("{}", _function_out);
 
   Ok(())
 }
