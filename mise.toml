@@ -1,2 +1,6 @@
 [tools]
+age = "latest"
+hk = "latest"
+pkl = "latest"
 rust = "stable"
+sops = "latest"
