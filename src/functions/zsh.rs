@@ -1,6 +1,8 @@
-use super::{Function, FunctionSpec};
+use super::{
+    repository::{FileSystemRepository, Repository},
+    Function, FunctionSpec,
+};
 use color_eyre::Result;
-use std::fs;
 use std::path::PathBuf;
 use tera::{Context, Tera};
 
@@ -20,14 +22,19 @@ impl Default for Zsh {
     }
 }
 
+impl Zsh {
+    fn render_body(&self, spec: &FunctionSpec) -> Result<String> {
+        self.tera
+            .render("functions/zsh", &Context::from_serialize(spec)?)
+            .map_err(Into::into)
+    }
+}
+
 impl Function for Zsh {
     fn create(&self, spec: &FunctionSpec, funky_dir: &PathBuf) -> Result<()> {
-        let function_out =
-            self.tera
-                .render("functions/zsh", &Context::from_serialize(spec)?)?;
-        let file_path = funky_dir.join(format!("{}.zsh", spec.name));
-        fs::write(file_path, function_out)?;
-        Ok(())
+        let body = self.render_body(spec)?;
+        let repo = FileSystemRepository::new(funky_dir);
+        repo.create(&spec.name, &body)
     }
 }
 
