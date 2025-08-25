@@ -1,5 +1,7 @@
 use crate::file::get_file;
-use crate::functions::{zsh::Zsh, Function, FunctionSpec};
+use crate::functions::{
+    repository::FileSystemRepository, zsh::Zsh, Function, FunctionSpec,
+};
 use color_eyre::eyre::{eyre, Result};
 use std::fs;
 use std::path::PathBuf;
@@ -33,8 +35,9 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
     let spec = FunctionSpec::new(&args.name, command, vec![])?;
 
     // For now, we'll hardcode Zsh. Later, this can come from config.
-    let zsh = Zsh::default();
-    zsh.create(&spec, funky_dir)?;
+    let repo = FileSystemRepository::new(funky_dir);
+    let zsh = Zsh::new(repo);
+    zsh.create(&spec)?;
 
     println!("Created function: {}", spec.name);
 
