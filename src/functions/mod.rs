@@ -5,6 +5,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+pub mod repository;
 pub mod zsh;
 
 #[derive(Serialize, Debug)]
