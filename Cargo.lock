@@ -451,6 +451,7 @@ dependencies = [
  "lazy_static",
  "serde",
  "shellexpand",
+ "tempfile",
  "tera",
 ]
 
