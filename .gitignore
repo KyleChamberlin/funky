@@ -1,1 +1,7 @@
-/target
+mise.local.toml
+GEMINI.md
+*.dll
+*.exe
+*.prompt
+.prompts/
+target/
