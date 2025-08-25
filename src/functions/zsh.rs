@@ -1,28 +1,29 @@
 use super::{
-    repository::{FileSystemRepository, Repository},
+    repository::Repository,
     Function, FunctionSpec,
 };
 use color_eyre::Result;
-use std::path::PathBuf;
 use tera::{Context, Tera};
 
-pub struct Zsh {
+pub struct Zsh<R: Repository> {
     tera: Tera,
+    zsh_functions: R,
 }
 
-impl Default for Zsh {
-    fn default() -> Self {
+impl<R: Repository> Zsh<R> {
+    pub fn new(repo: R) -> Self {
         let mut tera = Tera::default();
         tera.add_raw_template(
             "functions/zsh",
             include_str!("../../template/functions/zsh.tera"),
         )
         .unwrap();
-        Self { tera }
+        Self {
+            tera,
+            zsh_functions: repo,
+        }
     }
-}
 
-impl Zsh {
     fn render_body(&self, spec: &FunctionSpec) -> Result<String> {
         self.tera
             .render("functions/zsh", &Context::from_serialize(spec)?)
@@ -30,31 +31,33 @@ impl Zsh {
     }
 }
 
-impl Function for Zsh {
-    fn create(&self, spec: &FunctionSpec, funky_dir: &PathBuf) -> Result<()> {
+impl<R: Repository> Function for Zsh<R> {
+    fn create(&self, spec: &FunctionSpec) -> Result<()> {
         let body = self.render_body(spec)?;
-        let repo = FileSystemRepository::new(funky_dir);
-        repo.create(&spec.name, &body)
+        self.zsh_functions.create(&spec.name, &body)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        super::repository::FileSystemRepository,
+        *,
+    };
     use std::fs;
     use tempfile::tempdir;
 
     #[test]
     fn test_zsh_create() {
         let tmp_dir = tempdir().unwrap();
-        let funky_dir = tmp_dir.path().to_path_buf();
-        let zsh = Zsh::default();
+        let repo = FileSystemRepository::new(tmp_dir.path());
+        let zsh = Zsh::new(repo);
         let spec =
             FunctionSpec::new("Test Func", "echo 'hello world'".to_string(), vec![]).unwrap();
 
-        zsh.create(&spec, &funky_dir).unwrap();
+        zsh.create(&spec).unwrap();
 
-        let file_path = funky_dir.join("test-func.zsh");
+        let file_path = tmp_dir.path().join("test-func.zsh");
         assert!(file_path.exists());
         let content = fs::read_to_string(file_path).unwrap();
         assert!(content.contains("test-func"));

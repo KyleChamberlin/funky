@@ -2,7 +2,6 @@ use color_eyre::eyre::{eyre, Result};
 use serde::Serialize;
 use slug::slugify;
 use std::fmt;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 pub mod repository;
@@ -47,7 +46,7 @@ impl FunctionSpec {
 }
 
 pub trait Function {
-    fn create(&self, spec: &FunctionSpec, funky_dir: &PathBuf) -> Result<()>;
+    fn create(&self, spec: &FunctionSpec) -> Result<()>;
 }
 
 #[cfg(test)]
