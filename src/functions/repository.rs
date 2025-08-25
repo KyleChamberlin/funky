@@ -31,10 +31,33 @@ impl Repository for FileSystemRepository {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::collections::HashMap;
     use std::str::FromStr;
     use tempfile::tempdir;
+
+    pub struct MockRepository {
+        pub functions: RefCell<HashMap<String, String>>,
+    }
+
+    impl MockRepository {
+        pub fn new() -> Self {
+            Self {
+                functions: RefCell::new(HashMap::new()),
+            }
+        }
+    }
+
+    impl Repository for MockRepository {
+        fn create(&self, id: &Slug, contents: &str) -> Result<()> {
+            self.functions
+                .borrow_mut()
+                .insert(id.to_string(), contents.to_string());
+            Ok(())
+        }
+    }
 
     #[test]
     fn test_fs_repo_create() {

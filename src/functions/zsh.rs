@@ -41,26 +41,23 @@ impl<R: Repository> Function for Zsh<R> {
 #[cfg(test)]
 mod tests {
     use super::{
-        super::repository::FileSystemRepository,
+        super::repository::tests::MockRepository,
         *,
     };
-    use std::fs;
-    use tempfile::tempdir;
 
     #[test]
     fn test_zsh_create() {
-        let tmp_dir = tempdir().unwrap();
-        let repo = FileSystemRepository::new(tmp_dir.path());
+        let repo = MockRepository::new();
         let zsh = Zsh::new(repo);
         let spec =
             FunctionSpec::new("Test Func", "echo 'hello world'".to_string(), vec![]).unwrap();
 
         zsh.create(&spec).unwrap();
 
-        let file_path = tmp_dir.path().join("test-func.zsh");
-        assert!(file_path.exists());
-        let content = fs::read_to_string(file_path).unwrap();
-        assert!(content.contains("test-func"));
-        assert!(content.contains("echo 'hello world'"));
+        let functions = zsh.zsh_functions.functions.borrow();
+        let created_function = functions.get("test-func").unwrap();
+
+        assert!(created_function.contains("test-func"));
+        assert!(created_function.contains("echo 'hello world'"));
     }
 }
