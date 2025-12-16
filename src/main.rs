@@ -6,24 +6,24 @@ use funky_lib::commands;
 use funky_lib::file::get_dir;
 
 fn setup_cli_nice_to_haves() -> Result<()> {
-    color_eyre::install()?;
+  color_eyre::install()?;
 
-    ctrlc::set_handler(move || {
-        println!("Ctrl+C recieved, terminating.");
-    })?;
+  ctrlc::set_handler(move || {
+    println!("Ctrl+C recieved, terminating.");
+  })?;
 
-    Ok(())
+  Ok(())
 }
 
 fn main() -> Result<()> {
-    setup_cli_nice_to_haves()?;
+  setup_cli_nice_to_haves()?;
 
-    let args = Args::parse();
+  let args = Args::parse();
 
-    let funky_dir = get_dir(args.funky_dir)?;
+  let funky_dir = get_dir(args.funky_dir)?;
 
-    match args.command {
-        Command::New(function_args) => commands::new::new(&funky_dir, function_args),
-        _ => todo!(),
-    }
+  match args.command {
+    Command::New(function_args) => commands::new::new(&funky_dir, function_args),
+    _ => todo!(),
+  }
 }
