@@ -14,7 +14,7 @@ fn get_command_from_source(args: &Args) -> Result<String> {
       histfile_contents
         .lines()
         .rev()
-        .next()
+        .next_back()
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
