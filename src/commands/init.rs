@@ -1,29 +1,111 @@
-use clap::{Parser, ValueEnum};
+use color_eyre::eyre::{eyre, Result};
+use std::fs;
+use std::path::{Path, PathBuf};
+use tera::{Context, Tera};
 
-#[derive(Debug, Parser)]
-pub struct Args {
-  #[arg()]
-  name: String,
+pub fn init(funky_dir: &Path, shell: &str, rc_file: &str) -> Result<()> {
+  if shell != "zsh" {
+    return Err(eyre!(
+      "Unsupported shell: {}. Only zsh is currently supported.",
+      shell
+    ));
+  }
 
-  #[arg(value_enum, default_value = "fish")]
-  shell: Shell,
+  let rc_path = PathBuf::from(shellexpand::full(rc_file)?.to_string());
 
-  /// if another function is found in FUNKY_DIR with the same NAME,
-  /// overwrite the contents of that function without prompting.
-  #[arg(long)]
-  overwrite: bool,
+  let mut tera = Tera::default();
+  tera.add_raw_template("zsh/config", include_str!("../../template/zsh/config"))?;
 
-  /// The command you wish to make funky.
-  /// If your command includes shell interpreted glyphs you will need to either
-  /// escape them or quote your command to stop shell interpretation.
-  #[arg(name = "vargs", last = true)]
-  function: Option<Vec<String>>,
+  let mut context = Context::new();
+  context.insert("funky_dir", &funky_dir.display().to_string());
+
+  let snippet = tera.render("zsh/config", &context)?;
+
+  let existing_contents = if rc_path.exists() {
+    fs::read_to_string(&rc_path)?
+  } else {
+    String::new()
+  };
+
+  if existing_contents.contains(snippet.trim()) {
+    println!("Shell already configured for funky.");
+    return Ok(());
+  }
+
+  let mut new_contents = existing_contents;
+  if !new_contents.ends_with('\n') && !new_contents.is_empty() {
+    new_contents.push('\n');
+  }
+  new_contents.push_str(&snippet);
+
+  fs::write(&rc_path, new_contents)?;
+
+  println!("Updated {} for funky.", rc_file);
+
+  Ok(())
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-pub enum Shell {
-  Fish,
-  Zsh,
-  Bash,
-  Powershell,
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::fs;
+  use tempfile::tempdir;
+
+  #[test]
+  fn test_init_creates_config() {
+    let tmp_dir = tempdir().unwrap();
+    let funky_dir = tmp_dir.path().join("funky");
+    fs::create_dir_all(&funky_dir).unwrap();
+    let rc_file = tmp_dir.path().join(".zshrc");
+
+    init(&funky_dir, "zsh", rc_file.to_str().unwrap()).unwrap();
+
+    let contents = fs::read_to_string(&rc_file).unwrap();
+    assert!(contents.contains("fpath=("));
+    assert!(contents.contains("autoload -Uz"));
+  }
+
+  #[test]
+  fn test_init_idempotent() {
+    let tmp_dir = tempdir().unwrap();
+    let funky_dir = tmp_dir.path().join("funky");
+    fs::create_dir_all(&funky_dir).unwrap();
+    let rc_file = tmp_dir.path().join(".zshrc");
+
+    init(&funky_dir, "zsh", rc_file.to_str().unwrap()).unwrap();
+    init(&funky_dir, "zsh", rc_file.to_str().unwrap()).unwrap();
+
+    let contents = fs::read_to_string(&rc_file).unwrap();
+    let count = contents.matches("autoload -Uz").count();
+    assert_eq!(count, 1, "Config should only appear once");
+  }
+
+  #[test]
+  fn test_init_appends_to_existing() {
+    let tmp_dir = tempdir().unwrap();
+    let funky_dir = tmp_dir.path().join("funky");
+    fs::create_dir_all(&funky_dir).unwrap();
+    let rc_file = tmp_dir.path().join(".zshrc");
+    fs::write(&rc_file, "# existing config\nexport FOO=bar\n").unwrap();
+
+    init(&funky_dir, "zsh", rc_file.to_str().unwrap()).unwrap();
+
+    let contents = fs::read_to_string(&rc_file).unwrap();
+    assert!(contents.starts_with("# existing config"));
+    assert!(contents.contains("autoload -Uz"));
+  }
+
+  #[test]
+  fn test_init_unsupported_shell() {
+    let tmp_dir = tempdir().unwrap();
+    let funky_dir = tmp_dir.path().join("funky");
+    let rc_file = tmp_dir.path().join(".bashrc");
+
+    let result = init(&funky_dir, "bash", rc_file.to_str().unwrap());
+    assert!(result.is_err());
+    assert!(result
+      .unwrap_err()
+      .to_string()
+      .contains("Unsupported shell"));
+  }
 }
