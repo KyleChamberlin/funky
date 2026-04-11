@@ -13,8 +13,7 @@ fn get_command_from_source(args: &Args) -> Result<String> {
       let histfile_contents = fs::read_to_string(get_file(args.history_file.clone())?)?;
       histfile_contents
         .lines()
-        .rev()
-        .next_back()
+        .last()
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
