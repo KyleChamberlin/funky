@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 pub trait Repository {
   fn create(&self, id: &Slug, contents: &str) -> Result<()>;
   fn list(&self) -> Result<Vec<String>>;
-  // fn read(&self, id: &Slug) -> Result<String>;
+  fn read(&self, id: &Slug) -> Result<String>;
   // fn update(&self, id: &Slug, contents: &str) -> Result<()>;
   // fn delete(&self, id: &Slug) -> Result<()>;
 }
@@ -43,11 +43,17 @@ impl Repository for FileSystemRepository {
     }
     Ok(names)
   }
+
+  fn read(&self, id: &Slug) -> Result<String> {
+    let file_path = self.base_path.join(format!("{}.zsh", id));
+    fs::read_to_string(&file_path).map_err(Into::into)
+  }
 }
 
 #[cfg(test)]
 pub mod tests {
   use super::*;
+  use color_eyre::eyre::eyre;
   use std::cell::RefCell;
   use std::collections::HashMap;
   use std::str::FromStr;
@@ -76,6 +82,15 @@ pub mod tests {
 
     fn list(&self) -> Result<Vec<String>> {
       Ok(self.functions.borrow().keys().cloned().collect())
+    }
+
+    fn read(&self, id: &Slug) -> Result<String> {
+      self
+        .functions
+        .borrow()
+        .get(&id.to_string())
+        .cloned()
+        .ok_or_else(|| eyre!("Function '{}' not found", id))
     }
   }
 
@@ -108,5 +123,25 @@ pub mod tests {
     let mut result = repo.list().unwrap();
     result.sort();
     assert_eq!(result, vec!["alpha", "beta"]);
+  }
+
+  #[test]
+  fn test_fs_repo_read() {
+    let tmp_dir = tempdir().unwrap();
+    let repo = FileSystemRepository::new(tmp_dir.path());
+    let slug = Slug::from_str("test-func").unwrap();
+    fs::write(tmp_dir.path().join("test-func.zsh"), "echo hello").unwrap();
+
+    let contents = repo.read(&slug).unwrap();
+    assert_eq!(contents, "echo hello");
+  }
+
+  #[test]
+  fn test_fs_repo_read_not_found() {
+    let tmp_dir = tempdir().unwrap();
+    let repo = FileSystemRepository::new(tmp_dir.path());
+    let slug = Slug::from_str("nonexistent").unwrap();
+
+    assert!(repo.read(&slug).is_err());
   }
 }
