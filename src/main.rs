@@ -1,4 +1,7 @@
+use std::io::IsTerminal;
+
 use clap::Parser;
+use color_eyre::eyre::eyre;
 use color_eyre::Result;
 
 use funky_lib::args::{Args, Command};
@@ -23,6 +26,14 @@ fn main() -> Result<()> {
   let funky_dir = get_dir(args.funky_dir)?;
 
   match args.command {
+    Command::New(ref function_args) if function_args.name.is_none() => {
+      if !std::io::stdin().is_terminal() {
+        return Err(eyre!(
+          "Missing required argument: NAME\n\nUsage: funky new <NAME> [-- <COMMAND>...]\n\nFor interactive mode, run in a terminal."
+        ));
+      }
+      commands::new::interactive::interactive_new(&funky_dir, &function_args.history_file)
+    }
     Command::New(function_args) => commands::new::new(&funky_dir, function_args),
     Command::List => commands::list::list(&funky_dir),
     Command::Init { shell, rc_file, .. } => commands::init::init(&funky_dir, &shell, &rc_file),

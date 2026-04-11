@@ -41,14 +41,14 @@ pub struct EditArgs {
 
 #[derive(Debug, Parser)]
 pub struct NewArgs {
+  /// The name for your new function.
+  /// If omitted and running interactively, you will be prompted.
   #[arg()]
-  pub name: String,
+  pub name: Option<String>,
 
   #[arg(value_enum, long = "from", default_value = "vargs")]
   pub source: FunctionSource,
 
-  /// History files are currently only supported if in a format without extra metadata
-  /// TODO: add parsing rules for extended format history
   #[arg(long, env = "HISTFILE", default_value = "~/.zsh_history")]
   pub history_file: String,
 
