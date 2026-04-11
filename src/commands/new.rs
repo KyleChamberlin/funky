@@ -7,6 +7,16 @@ use std::path::PathBuf;
 // Re-exporting Args and FunctionSource for main.rs
 pub use crate::args::{FunctionSource, NewArgs as Args};
 
+fn read_command_from_reader(reader: &mut dyn std::io::Read) -> Result<String> {
+  let mut buffer = String::new();
+  reader.read_to_string(&mut buffer)?;
+  let trimmed = buffer.trim().to_string();
+  if trimmed.is_empty() {
+    return Err(eyre!("No input received from stdin"));
+  }
+  Ok(trimmed)
+}
+
 fn get_command_from_source(args: &Args) -> Result<String> {
   match args.source {
     FunctionSource::History => {
@@ -17,7 +27,7 @@ fn get_command_from_source(args: &Args) -> Result<String> {
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
-    FunctionSource::StdIn => todo!(),
+    FunctionSource::StdIn => read_command_from_reader(&mut std::io::stdin()),
     FunctionSource::Clipboard => todo!(),
     FunctionSource::Vargs => args
       .function
@@ -45,7 +55,7 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
 mod tests {
   use super::*;
   use std::fs::File;
-  use std::io::Write;
+  use std::io::{Cursor, Write};
   use tempfile::tempdir;
 
   #[test]
@@ -66,5 +76,12 @@ mod tests {
 
     let result = get_command_from_source(&args).unwrap();
     assert_eq!(result, "echo world");
+  }
+
+  #[test]
+  fn test_read_command_from_reader() {
+    let mut reader = Cursor::new(b"echo hello world\n");
+    let result = read_command_from_reader(&mut reader).unwrap();
+    assert_eq!(result, "echo hello world");
   }
 }
