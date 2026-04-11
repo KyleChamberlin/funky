@@ -37,6 +37,14 @@ fn main() -> Result<()> {
     Command::New(function_args) => commands::new::new(&funky_dir, function_args),
     Command::List => commands::list::list(&funky_dir),
     Command::Init { shell, rc_file, .. } => commands::init::init(&funky_dir, &shell, &rc_file),
+    Command::Edit(ref edit_args) if edit_args.name.is_none() => {
+      if !std::io::stdin().is_terminal() {
+        return Err(eyre!(
+          "Missing required argument: NAME\n\nUsage: funky edit <NAME>\n\nFor interactive mode, run in a terminal."
+        ));
+      }
+      commands::edit::interactive_edit(&funky_dir, edit_args.editor.clone())
+    }
     Command::Edit(edit_args) => commands::edit::edit(&funky_dir, edit_args),
   }
 }

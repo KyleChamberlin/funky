@@ -30,8 +30,9 @@ pub enum Command {
 
 #[derive(Debug, Parser)]
 pub struct EditArgs {
+  /// The function to edit. If omitted and running interactively, you will be prompted.
   #[arg()]
-  pub name: String,
+  pub name: Option<String>,
 
   /// Override the editor to use for this invocation.
   /// Default resolution: $VISUAL > $EDITOR > vim > nano

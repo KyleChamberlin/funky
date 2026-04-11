@@ -1,6 +1,7 @@
 use crate::functions::repository::{FileSystemRepository, Repository};
 use crate::functions::Slug;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{eyre, Result};
+use inquire::InquireError;
 use std::env;
 use std::fs as stdfs;
 use std::io::Write;
@@ -67,9 +68,45 @@ fn open_in_editor(content: &str, editor_override: Option<&str>) -> Result<Option
 }
 
 pub fn edit(funky_dir: &Path, args: EditArgs) -> Result<()> {
+  let name = args
+    .name
+    .as_deref()
+    .ok_or_else(|| eyre!("Function name is required. Run interactively or pass a name."))?;
   let editor_override = args.editor.as_deref();
-  edit_with(funky_dir, &args.name, |content| {
+  edit_with(funky_dir, name, |content| {
     open_in_editor(content, editor_override)
+  })
+}
+
+pub fn interactive_edit(funky_dir: &Path, editor_override: Option<String>) -> Result<()> {
+  match run_interactive_edit(funky_dir, editor_override) {
+    Ok(()) => Ok(()),
+    Err(err) => match err.downcast::<InquireError>() {
+      Ok(InquireError::OperationCanceled | InquireError::OperationInterrupted) => {
+        println!("Operation cancelled.");
+        Ok(())
+      }
+      Ok(other) => Err(other.into()),
+      Err(other) => Err(other),
+    },
+  }
+}
+
+fn run_interactive_edit(funky_dir: &Path, editor_override: Option<String>) -> Result<()> {
+  let repo = FileSystemRepository::new(funky_dir);
+  let mut names = repo.list()?;
+
+  if names.is_empty() {
+    return Err(eyre!("No functions found. Create one with: funky new"));
+  }
+
+  names.sort();
+  let selected = inquire::Select::new("Select function to edit:", names)
+    .with_help_message("↑↓ navigate, type to filter")
+    .prompt()?;
+
+  edit_with(funky_dir, &selected, |content| {
+    open_in_editor(content, editor_override.as_deref())
   })
 }
 
