@@ -1,4 +1,5 @@
 use crate::functions::Slug;
+use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -7,7 +8,7 @@ pub trait Repository {
   fn create(&self, id: &Slug, contents: &str) -> Result<()>;
   fn list(&self) -> Result<Vec<String>>;
   fn read(&self, id: &Slug) -> Result<String>;
-  // fn update(&self, id: &Slug, contents: &str) -> Result<()>;
+  fn update(&self, id: &Slug, contents: &str) -> Result<()>;
   // fn delete(&self, id: &Slug) -> Result<()>;
 }
 
@@ -47,6 +48,15 @@ impl Repository for FileSystemRepository {
   fn read(&self, id: &Slug) -> Result<String> {
     let file_path = self.base_path.join(format!("{}.zsh", id));
     fs::read_to_string(&file_path).map_err(Into::into)
+  }
+
+  fn update(&self, id: &Slug, contents: &str) -> Result<()> {
+    let file_path = self.base_path.join(format!("{}.zsh", id));
+    if !file_path.exists() {
+      return Err(eyre!("Function '{}' not found", id));
+    }
+    fs::write(file_path, contents)?;
+    Ok(())
   }
 }
 
@@ -91,6 +101,15 @@ pub mod tests {
         .get(&id.to_string())
         .cloned()
         .ok_or_else(|| eyre!("Function '{}' not found", id))
+    }
+
+    fn update(&self, id: &Slug, contents: &str) -> Result<()> {
+      let mut functions = self.functions.borrow_mut();
+      if !functions.contains_key(&id.to_string()) {
+        return Err(eyre!("Function '{}' not found", id));
+      }
+      functions.insert(id.to_string(), contents.to_string());
+      Ok(())
     }
   }
 
@@ -143,5 +162,27 @@ pub mod tests {
     let slug = Slug::from_str("nonexistent").unwrap();
 
     assert!(repo.read(&slug).is_err());
+  }
+
+  #[test]
+  fn test_fs_repo_update() {
+    let tmp_dir = tempdir().unwrap();
+    let slug = Slug::from_str("test-func").unwrap();
+    fs::write(tmp_dir.path().join("test-func.zsh"), "echo old").unwrap();
+
+    let repo = FileSystemRepository::new(tmp_dir.path());
+    repo.update(&slug, "echo new").unwrap();
+
+    let contents = fs::read_to_string(tmp_dir.path().join("test-func.zsh")).unwrap();
+    assert_eq!(contents, "echo new");
+  }
+
+  #[test]
+  fn test_fs_repo_update_not_found() {
+    let tmp_dir = tempdir().unwrap();
+    let slug = Slug::from_str("nonexistent").unwrap();
+    let repo = FileSystemRepository::new(tmp_dir.path());
+
+    assert!(repo.update(&slug, "content").is_err());
   }
 }
