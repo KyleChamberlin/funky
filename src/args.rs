@@ -67,6 +67,7 @@ pub struct NewArgs {
 #[derive(ValueEnum, Clone, Debug)]
 pub enum FunctionSource {
   History,
+  #[value(name = "stdin")]
   StdIn,
   Clipboard,
   Vargs,
