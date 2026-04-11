@@ -1,5 +1,7 @@
 [tools]
 age = "latest"
+"cargo:cargo-deny" = "latest"
+"cargo:cargo-dist" = "latest"
 hk = "latest"
 pkl = "latest"
 rust = "stable"
