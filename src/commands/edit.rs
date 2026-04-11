@@ -43,4 +43,22 @@ mod tests {
     let result = fs::read_to_string(tmp_dir.path().join("my-func.zsh")).unwrap();
     assert_eq!(result, "echo new");
   }
+
+  #[test]
+  fn test_edit_cancelled_leaves_function_unchanged() {
+    let tmp_dir = tempdir().unwrap();
+    fs::write(tmp_dir.path().join("my-func.zsh"), "echo original").unwrap();
+
+    edit_with(tmp_dir.path(), "my-func", |_| Ok(None)).unwrap();
+
+    let result = fs::read_to_string(tmp_dir.path().join("my-func.zsh")).unwrap();
+    assert_eq!(result, "echo original");
+  }
+
+  #[test]
+  fn test_edit_nonexistent_function_errors() {
+    let tmp_dir = tempdir().unwrap();
+    let result = edit_with(tmp_dir.path(), "nope", |_| Ok(Some("x".into())));
+    assert!(result.is_err());
+  }
 }
