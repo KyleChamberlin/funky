@@ -6,6 +6,8 @@ use color_eyre::eyre::{eyre, Result};
 use std::fs;
 use std::path::PathBuf;
 
+use std::io::IsTerminal;
+
 // Re-exporting Args and FunctionSource for main.rs
 pub use crate::args::{FunctionSource, NewArgs as Args};
 
@@ -29,13 +31,22 @@ fn get_command_from_source(args: &Args) -> Result<String> {
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
-    FunctionSource::StdIn => read_command_from_reader(&mut std::io::stdin()),
+    FunctionSource::StdIn => {
+      if std::io::stdin().is_terminal() {
+        return Err(eyre!(
+          "No input piped to stdin. Usage: echo \"command\" | funky new <name> --from stdin"
+        ));
+      }
+      read_command_from_reader(&mut std::io::stdin())
+    }
     FunctionSource::Clipboard => todo!(),
-    FunctionSource::Vargs => args
-      .function
-      .as_ref()
-      .map(|s| s.join(" "))
-      .ok_or_else(|| eyre!("No Vargs provided for SOURCE Vargs.")),
+    FunctionSource::Vargs => match &args.function {
+      Some(function) => Ok(function.join(" ")),
+      None if !std::io::stdin().is_terminal() => read_command_from_reader(&mut std::io::stdin()),
+      None => Err(eyre!(
+        "No command provided. Pass a command after -- or pipe to stdin."
+      )),
+    },
   }
 }
 
@@ -92,6 +103,20 @@ mod tests {
     let mut reader = Cursor::new(b"echo hello world\n");
     let result = read_command_from_reader(&mut reader).unwrap();
     assert_eq!(result, "echo hello world");
+  }
+
+  #[test]
+  fn test_vargs_no_input_errors() {
+    let args = Args {
+      name: "test".to_string(),
+      source: FunctionSource::Vargs,
+      history_file: String::new(),
+      overwrite: false,
+      function: None,
+    };
+
+    let result = get_command_from_source(&args);
+    assert!(result.is_err());
   }
 
   #[test]
