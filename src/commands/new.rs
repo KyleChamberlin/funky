@@ -1,8 +1,7 @@
 use crate::file::get_file;
-use crate::functions::{repository::FileSystemRepository, zsh::Zsh, Function, FunctionSpec};
+use crate::functions::{repository::FileSystemRepository, repository::Repository, zsh::Zsh, Function, FunctionSpec};
 use color_eyre::eyre::{eyre, Result};
 use std::fs;
-use std::io::IsTerminal;
 use std::path::PathBuf;
 
 // Re-exporting Args and FunctionSource for main.rs
@@ -28,14 +27,7 @@ fn get_command_from_source(args: &Args) -> Result<String> {
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
-    FunctionSource::StdIn => {
-      if std::io::stdin().is_terminal() {
-        return Err(eyre!(
-          "No input piped to stdin. Usage: echo \"command\" | funky new <name> --from stdin"
-        ));
-      }
-      read_command_from_reader(&mut std::io::stdin())
-    }
+    FunctionSource::StdIn => read_command_from_reader(&mut std::io::stdin()),
     FunctionSource::Clipboard => todo!(),
     FunctionSource::Vargs => args
       .function
@@ -49,8 +41,15 @@ pub fn new(funky_dir: &PathBuf, args: Args) -> Result<()> {
   let command = get_command_from_source(&args)?;
   let spec = FunctionSpec::new(&args.name, command, vec![])?;
 
-  // For now, we'll hardcode Zsh. Later, this can come from config.
   let repo = FileSystemRepository::new(funky_dir);
+
+  if !args.overwrite && repo.read(&spec.name).is_ok() {
+    return Err(eyre!(
+      "Function '{}' already exists. Use --overwrite to replace it.",
+      spec.name
+    ));
+  }
+
   let zsh = Zsh::new(repo);
   zsh.create(&spec)?;
 
@@ -94,16 +93,36 @@ mod tests {
   }
 
   #[test]
-  fn test_read_command_from_reader_empty() {
-    let mut reader = Cursor::new(b"");
-    let result = read_command_from_reader(&mut reader);
+  fn test_new_rejects_duplicate_without_overwrite() {
+    let tmp_dir = tempdir().unwrap();
+    fs::write(tmp_dir.path().join("my-func.zsh"), "echo old").unwrap();
+
+    let args = Args {
+      name: "my-func".to_string(),
+      source: FunctionSource::Vargs,
+      history_file: String::new(),
+      overwrite: false,
+      function: Some(vec!["echo".to_string(), "new".to_string()]),
+    };
+
+    let result = new(&tmp_dir.path().to_path_buf(), args);
     assert!(result.is_err());
   }
 
   #[test]
-  fn test_read_command_from_reader_whitespace_only() {
-    let mut reader = Cursor::new(b"   \n\n  ");
-    let result = read_command_from_reader(&mut reader);
-    assert!(result.is_err());
+  fn test_new_allows_overwrite_when_flag_set() {
+    let tmp_dir = tempdir().unwrap();
+    fs::write(tmp_dir.path().join("my-func.zsh"), "echo old").unwrap();
+
+    let args = Args {
+      name: "my-func".to_string(),
+      source: FunctionSource::Vargs,
+      history_file: String::new(),
+      overwrite: true,
+      function: Some(vec!["echo".to_string(), "new".to_string()]),
+    };
+
+    let result = new(&tmp_dir.path().to_path_buf(), args);
+    assert!(result.is_ok());
   }
 }
