@@ -2,6 +2,7 @@ use crate::file::get_file;
 use crate::functions::{repository::FileSystemRepository, zsh::Zsh, Function, FunctionSpec};
 use color_eyre::eyre::{eyre, Result};
 use std::fs;
+use std::io::IsTerminal;
 use std::path::PathBuf;
 
 // Re-exporting Args and FunctionSource for main.rs
@@ -27,7 +28,14 @@ fn get_command_from_source(args: &Args) -> Result<String> {
         .map(String::from)
         .ok_or_else(|| eyre!("Unable to find command from HISTORY_FILE"))
     }
-    FunctionSource::StdIn => read_command_from_reader(&mut std::io::stdin()),
+    FunctionSource::StdIn => {
+      if std::io::stdin().is_terminal() {
+        return Err(eyre!(
+          "No input piped to stdin. Usage: echo \"command\" | funky new <name> --from stdin"
+        ));
+      }
+      read_command_from_reader(&mut std::io::stdin())
+    }
     FunctionSource::Clipboard => todo!(),
     FunctionSource::Vargs => args
       .function
@@ -83,5 +91,19 @@ mod tests {
     let mut reader = Cursor::new(b"echo hello world\n");
     let result = read_command_from_reader(&mut reader).unwrap();
     assert_eq!(result, "echo hello world");
+  }
+
+  #[test]
+  fn test_read_command_from_reader_empty() {
+    let mut reader = Cursor::new(b"");
+    let result = read_command_from_reader(&mut reader);
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn test_read_command_from_reader_whitespace_only() {
+    let mut reader = Cursor::new(b"   \n\n  ");
+    let result = read_command_from_reader(&mut reader);
+    assert!(result.is_err());
   }
 }
