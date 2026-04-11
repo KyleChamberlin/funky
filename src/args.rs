@@ -25,7 +25,18 @@ pub enum Command {
   },
   New(NewArgs),
   List,
-  Edit,
+  Edit(EditArgs),
+}
+
+#[derive(Debug, Parser)]
+pub struct EditArgs {
+  #[arg()]
+  pub name: String,
+
+  /// Override the editor to use for this invocation.
+  /// Default resolution: $VISUAL > $EDITOR > vim > nano
+  #[arg(long)]
+  pub editor: Option<String>,
 }
 
 #[derive(Debug, Parser)]

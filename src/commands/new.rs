@@ -1,5 +1,7 @@
 use crate::file::get_file;
-use crate::functions::{repository::FileSystemRepository, repository::Repository, zsh::Zsh, Function, FunctionSpec};
+use crate::functions::{
+  repository::FileSystemRepository, repository::Repository, zsh::Zsh, Function, FunctionSpec,
+};
 use color_eyre::eyre::{eyre, Result};
 use std::fs;
 use std::path::PathBuf;
