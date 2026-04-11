@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 pub trait Repository {
   fn create(&self, id: &Slug, contents: &str) -> Result<()>;
+  fn list(&self) -> Result<Vec<String>>;
   // fn read(&self, id: &Slug) -> Result<String>;
   // fn update(&self, id: &Slug, contents: &str) -> Result<()>;
   // fn delete(&self, id: &Slug) -> Result<()>;
@@ -27,6 +28,20 @@ impl Repository for FileSystemRepository {
     let file_path = self.base_path.join(format!("{}.zsh", id));
     fs::write(file_path, contents)?;
     Ok(())
+  }
+
+  fn list(&self) -> Result<Vec<String>> {
+    let mut names = Vec::new();
+    for entry in fs::read_dir(&self.base_path)? {
+      let entry = entry?;
+      let path = entry.path();
+      if path.extension().and_then(|e| e.to_str()) == Some("zsh") {
+        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+          names.push(stem.to_string());
+        }
+      }
+    }
+    Ok(names)
   }
 }
 
@@ -58,6 +73,10 @@ pub mod tests {
         .insert(id.to_string(), contents.to_string());
       Ok(())
     }
+
+    fn list(&self) -> Result<Vec<String>> {
+      Ok(self.functions.borrow().keys().cloned().collect())
+    }
   }
 
   #[test]
@@ -73,5 +92,21 @@ pub mod tests {
     assert!(file_path.exists());
     let read_contents = fs::read_to_string(file_path).unwrap();
     assert_eq!(read_contents, contents);
+  }
+
+  #[test]
+  fn test_fs_repo_list() {
+    let tmp_dir = tempdir().unwrap();
+    let repo = FileSystemRepository::new(tmp_dir.path());
+
+    let result = repo.list().unwrap();
+    assert!(result.is_empty());
+
+    fs::write(tmp_dir.path().join("alpha.zsh"), "echo alpha").unwrap();
+    fs::write(tmp_dir.path().join("beta.zsh"), "echo beta").unwrap();
+
+    let mut result = repo.list().unwrap();
+    result.sort();
+    assert_eq!(result, vec!["alpha", "beta"]);
   }
 }

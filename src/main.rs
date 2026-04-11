@@ -24,6 +24,7 @@ fn main() -> Result<()> {
 
   match args.command {
     Command::New(function_args) => commands::new::new(&funky_dir, function_args),
+    Command::List => commands::list::list(&funky_dir),
     _ => todo!(),
   }
 }
