@@ -1,37 +1,166 @@
-Funky
-=====
+# Funky
 
-Do you ever find yourself scrolling back in history to find _that_ command.
-You know the one. the one you carfeully crafted a week ago that has all the
-right options and switches to invoke the right incantation. Well, Funky can
-help you make that bespoke cli invocation into a shell function that is easily
-(and repeatedly) available.
+**Turn command history into reusable shell functions.**
 
-Basic Usage
------------
+[![CI](https://github.com/KyleChamberlin/funky/actions/workflows/ci.yml/badge.svg)](https://github.com/KyleChamberlin/funky/actions/workflows/ci.yml)
+[![License: GPL-3.0-or-later](https://img.shields.io/github/license/KyleChamberlin/funky)](LICENSE.md)
+[![GitHub Release](https://img.shields.io/github/v/release/KyleChamberlin/funky)](https://github.com/KyleChamberlin/funky/releases/latest)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/KyleChamberlin/funky/badge)](https://securityscorecards.dev/viewer/?uri=github.com/KyleChamberlin/funky)
 
-```sh
-funky new my-long-cmd -- long command "with some payload" --and -s -o -m -e --switches "and an $ENV_VAR"
-```
-
-Now you will have a zsh function my-long-cmd that you can call directly in your shell.
+You've carefully crafted the perfect command &mdash; the right flags, the right switches, the right incantation. Tomorrow you'll scroll through history trying to find it again. Funky saves that command as a native shell function you can call anytime.
 
 ```sh
-my-long-cmd
+# Save a command
+funky new deploy -- kubectl apply -f manifests/ --namespace production
+
+# Use it
+deploy
 ```
 
-### But, My Command needs to change over time
+No wrappers. No aliases. No runtime. Just a plain shell function.
 
-So, your command needs arguments. You have some component in your command that changes from invocation to invocation, no problem!
-Funcky provides a few was to handle this. First, you can simply use `$ENV_VAR`s to inject these pieces, but that can be clunky and
-it can be easy to forget which vars need to be set to what values for your desired behavior. For this, we provide an interactive token
-selection that allows you to take any token in your command and make it an argument to your function.
+## Features
 
-How Does It Work?
------------------
+- **Zero overhead** &mdash; Functions are native shell functions, as fast as anything your shell can run
+- **Instant availability** &mdash; Create a function and use it immediately, no shell restart required
+- **Plain files** &mdash; One file per function in `~/.funky/`, easy to version control or sync across machines
+- **Multiple sources** &mdash; Capture commands from arguments, shell history, or stdin
 
-Funky works by leveraging your existing shell's function mechanisms. Funky can update your shell configuration to automatically pick up
-new and changed functions at the time of invocation in the shell. This means it is fast, and doesn't require you to re-launch your shell
-each time you want to create a new function with Funky.
+## Install
 
-Simply run `Funky init` to update your preferred shell configuration file.
+### Homebrew (recommended)
+
+```sh
+brew install kylechamberlin/tap/funky
+```
+
+### Shell installer
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/KyleChamberlin/funky/releases/latest/download/funky-installer.sh | sh
+```
+
+### PowerShell
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/KyleChamberlin/funky/releases/latest/download/funky-installer.ps1 | iex"
+```
+
+### cargo-binstall
+
+```sh
+cargo binstall funky
+```
+
+### From source
+
+```sh
+cargo install --git https://github.com/KyleChamberlin/funky.git
+```
+
+## Quick Start
+
+**1. Initialize your shell**
+
+```sh
+funky init
+```
+
+This configures zsh to autoload functions from `~/.funky/`. Run it once.
+
+**2. Create a function**
+
+```sh
+funky new hello -- echo "Hello from Funky!"
+```
+
+**3. Use it**
+
+```sh
+hello
+# Hello from Funky!
+```
+
+## Creating Functions
+
+### From arguments
+
+```sh
+funky new deploy -- kubectl apply -f manifests/ --namespace production
+```
+
+### From shell history
+
+```sh
+docker compose -f docker-compose.prod.yml up -d --build --force-recreate
+funky new redeploy --from history
+```
+
+### From stdin
+
+```sh
+echo "cargo test --workspace --no-fail-fast" | funky new test-all --from stdin
+```
+
+### With environment variables
+
+Variables resolve at call time:
+
+```sh
+funky new connect -- ssh "$DEPLOY_USER@$DEPLOY_HOST"
+```
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `funky init` | Configure your shell to load functions |
+| `funky new <name> [-- <command>]` | Create a new function |
+| `funky list` | List all functions |
+| `funky edit <name>` | Open a function in your editor |
+
+Use `--funky-dir <path>` to change the function storage directory (default: `~/.funky/`).
+
+## Shell Support
+
+| Shell | Status |
+|---|---|
+| zsh | Fully supported |
+| fish | Planned |
+| bash | Planned |
+
+Funky generates native shell functions using each shell's own machinery. If you uninstall Funky, your functions keep working.
+
+## How It Works
+
+Funky uses zsh's built-in `fpath` + `autoload` mechanism. Functions are stored as individual `.zsh` files:
+
+```
+~/.funky/
+├── deploy.zsh
+├── hello.zsh
+└── test-all.zsh
+```
+
+Each file is a standard zsh autoloadable function &mdash; nothing Funky-specific. Functions load lazily, so startup stays fast regardless of how many you have.
+
+## Documentation
+
+Full docs at **[ktc.sh/funky](https://ktc.sh/funky)**.
+
+## Contributing
+
+```sh
+git clone https://github.com/KyleChamberlin/funky.git
+cd funky
+mise install
+cargo build
+cargo test --workspace
+```
+
+See the [contributing guide](https://ktc.sh/funky/development/contributing) for details.
+
+## License
+
+[GPL-3.0-or-later](LICENSE.md)
