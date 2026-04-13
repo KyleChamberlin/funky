@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -103,9 +103,11 @@ mod tests {
 
     let result = init(&funky_dir, "bash", rc_file.to_str().unwrap());
     assert!(result.is_err());
-    assert!(result
-      .unwrap_err()
-      .to_string()
-      .contains("Unsupported shell"));
+    assert!(
+      result
+        .unwrap_err()
+        .to_string()
+        .contains("Unsupported shell")
+    );
   }
 }

@@ -1,8 +1,8 @@
 use std::io::IsTerminal;
 
 use clap::Parser;
-use color_eyre::eyre::eyre;
 use color_eyre::Result;
+use color_eyre::eyre::eyre;
 
 use funky_lib::args::{Args, Command};
 use funky_lib::commands;

@@ -1,4 +1,4 @@
-use super::{repository::Repository, Function, FunctionSpec};
+use super::{Function, FunctionSpec, repository::Repository};
 use color_eyre::Result;
 use tera::{Context, Tera};
 

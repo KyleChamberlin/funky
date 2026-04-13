@@ -1,6 +1,6 @@
 use crate::functions::repository::{FileSystemRepository, Repository};
-use crate::functions::{zsh::Zsh, Function, FunctionSpec};
-use color_eyre::eyre::{eyre, Result};
+use crate::functions::{Function, FunctionSpec, zsh::Zsh};
+use color_eyre::eyre::{Result, eyre};
 use inquire::InquireError;
 use std::fs;
 use std::path::Path;

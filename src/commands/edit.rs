@@ -1,6 +1,6 @@
-use crate::functions::repository::{FileSystemRepository, Repository};
 use crate::functions::Slug;
-use color_eyre::eyre::{eyre, Result};
+use crate::functions::repository::{FileSystemRepository, Repository};
+use color_eyre::eyre::{Result, eyre};
 use inquire::InquireError;
 use std::env;
 use std::fs as stdfs;
@@ -15,15 +15,15 @@ fn resolve_editor(editor_override: Option<&str>) -> Result<String> {
   if let Some(editor) = editor_override {
     return Ok(editor.to_string());
   }
-  if let Ok(editor) = env::var("VISUAL") {
-    if !editor.is_empty() {
-      return Ok(editor);
-    }
+  if let Ok(editor) = env::var("VISUAL")
+    && !editor.is_empty()
+  {
+    return Ok(editor);
   }
-  if let Ok(editor) = env::var("EDITOR") {
-    if !editor.is_empty() {
-      return Ok(editor);
-    }
+  if let Ok(editor) = env::var("EDITOR")
+    && !editor.is_empty()
+  {
+    return Ok(editor);
   }
   for fallback in &["vim", "nano"] {
     if std::process::Command::new("which")

@@ -1,6 +1,6 @@
 use crate::functions::Slug;
-use color_eyre::eyre::eyre;
 use color_eyre::Result;
+use color_eyre::eyre::eyre;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -36,10 +36,10 @@ impl Repository for FileSystemRepository {
     for entry in fs::read_dir(&self.base_path)? {
       let entry = entry?;
       let path = entry.path();
-      if path.extension().and_then(|e| e.to_str()) == Some("zsh") {
-        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-          names.push(stem.to_string());
-        }
+      if path.extension().and_then(|e| e.to_str()) == Some("zsh")
+        && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+      {
+        names.push(stem.to_string());
       }
     }
     Ok(names)
@@ -71,6 +71,12 @@ pub mod tests {
 
   pub struct MockRepository {
     pub functions: RefCell<HashMap<String, String>>,
+  }
+
+  impl Default for MockRepository {
+    fn default() -> Self {
+      Self::new()
+    }
   }
 
   impl MockRepository {
