@@ -5,3 +5,6 @@ GEMINI.md
 *.prompt
 .prompts/
 target/
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
