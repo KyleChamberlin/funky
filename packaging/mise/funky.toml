@@ -1,0 +1,11 @@
+# Phase 1: github + cargo backends (works immediately)
+backends = ["github:KyleChamberlin/funky", "cargo:funky"]
+description = "Turn command history into reusable shell functions"
+test = { cmd = "funky --version", expected = "funky {{version}}" }
+
+# Phase 2 (after aqua-registry PR is merged, replace backends above with):
+# backends = [
+#   "aqua:KyleChamberlin/funky",
+#   "github:KyleChamberlin/funky",
+#   "cargo:funky",
+# ]
