@@ -41,6 +41,12 @@ curl --proto '=https' --tlsv1.2 -LsSf \
   https://github.com/KyleChamberlin/funky/releases/latest/download/funky-installer.sh | sh
 ```
 
+### Chocolatey (Windows)
+
+```powershell
+choco install funky
+```
+
 ### PowerShell
 
 ```powershell
