@@ -1,8 +1,8 @@
 use std::io::IsTerminal;
 
-use clap::Parser;
-use color_eyre::Result;
+use clap::{CommandFactory, Parser};
 use color_eyre::eyre::eyre;
+use color_eyre::Result;
 
 use funky_lib::args::{Args, Command};
 use funky_lib::commands;
@@ -46,5 +46,9 @@ fn main() -> Result<()> {
       commands::edit::interactive_edit(&funky_dir, edit_args.editor.clone())
     }
     Command::Edit(edit_args) => commands::edit::edit(&funky_dir, edit_args),
+    Command::Usage => {
+      clap_usage::generate(&mut Args::command(), "funky", &mut std::io::stdout());
+      Ok(())
+    }
   }
 }

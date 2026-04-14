@@ -123,6 +123,7 @@ Each extension is additive. Existing code doesn't change to accommodate new shel
 | Crate | Purpose |
 |-------|---------|
 | `clap` | CLI argument parsing |
+| `clap_usage` | CLI spec generation for [usage](https://usage.jdx.dev/) |
 | `tera` | Template rendering |
 | `serde` | Serialization for template context |
 | `color-eyre` | Error reporting |

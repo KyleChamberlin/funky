@@ -6,6 +6,7 @@
 | [`funky new`](/reference/new) | Create a new function |
 | [`funky list`](/reference/list) | List all functions |
 | [`funky edit`](/reference/edit) | Edit an existing function |
+| [`funky usage`](/reference/usage) | Output CLI spec for shell completions, docs, and man pages |
 
 ## Global Options
 

@@ -19,7 +19,7 @@ funky init [SHELL] [OPTIONS]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--rc-file <PATH>` | `~/.zshrc` | Shell config file to modify |
-| `--completion` | — | Generate shell completions |
+| `--completion` | — | *(Not yet implemented)* See [`funky usage`](/reference/usage) for shell completions |
 
 ## What It Does
 
