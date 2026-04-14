@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aquaproj/aqua/main/json-schema/registry.json
+packages:
+  - type: github_release
+    repo_owner: KyleChamberlin
+    repo_name: funky
+    description: Turn command history into reusable shell functions
+    version_constraint: "false"
+    version_overrides:
+      - version_constraint: semver("<= 0.0.1")
+        asset: funky-v{{.Version}}-{{.OS}}-{{.Arch}}.zip
+        format: zip
+        files:
+          - name: funky
+            src: "{{.AssetWithoutExt}}/funky"
+        replacements:
+          amd64: x64
+          arm64: aarch64
+          darwin: macos
+        supported_envs:
+          - darwin
+          - linux
+          - windows/amd64
+          - windows/386
+        overrides:
+          - goos: linux
+            goarch: arm64
+            replacements:
+              amd64: x64
+              arm64: aarach64
+              darwin: macos
+          - goos: windows
+            replacements:
+              amd64: x64
+              386: x86
+              darwin: macos
+            files:
+              - name: funky
+                src: "{{.AssetWithoutExt}}/funky.exe"
+      - version_constraint: "true"
+        asset: funky-v{{.Version}}-{{.OS}}-{{.Arch}}.zip
+        format: zip
+        files:
+          - name: funky
+            src: "{{.AssetWithoutExt}}/funky"
+        replacements:
+          amd64: x64
+          arm64: aarch64
+          darwin: macos
+        supported_envs:
+          - darwin
+          - linux
+          - windows/amd64
+          - windows/386
+        overrides:
+          - goos: windows
+            replacements:
+              amd64: x64
+              386: x86
+              darwin: macos
+            files:
+              - name: funky
+                src: "{{.AssetWithoutExt}}/funky.exe"
