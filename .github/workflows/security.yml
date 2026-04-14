@@ -1,6 +1,7 @@
+---
 name: Security
 
-on:
+"on":
   push:
     branches: [main]
     paths:
@@ -27,26 +28,40 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: EmbarkStudios/cargo-deny-action@91bf2b620e09e18d6eb78b92e7861937469acedb # v2
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      # v2
+      - uses: >-
+          EmbarkStudios/cargo-deny-action@91bf2b620e09e18d6eb78b92e7861937469acedb
         with:
           command: check
           arguments: --all-features
-          command-arguments: advisories licenses bans sources
-      - uses: taiki-e/install-action@6e4b50d359005dacdb018fa32c03bc35522c6616 # v2
+          command-arguments: >-
+            advisories licenses bans sources
+      - uses: >-
+          taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754
         if: always()
         with:
           tool: cargo-deny
       - name: Generate SARIF
         if: always()
         run: |
-          cargo deny --all-features --format sarif check advisories licenses bans sources > deny-results.sarif || true
-          # Ensure a valid SARIF file exists even when cargo-deny produces no output
-          if [ ! -s deny-results.sarif ] || ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" deny-results.sarif 2>/dev/null; then
-            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"cargo-deny","informationUri":"https://github.com/EmbarkStudios/cargo-deny"}},"results":[]}]}' > deny-results.sarif
+          cargo deny --all-features --format sarif \
+            check advisories licenses bans sources \
+            > deny-results.sarif || true
+          if [ ! -s deny-results.sarif ] \
+            || ! python3 -c \
+            "import json,sys; json.load(open(sys.argv[1]))" \
+            deny-results.sarif 2>/dev/null; then
+            cat <<'SARIF' > deny-results.sarif
+          {"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"cargo-deny","informationUri":"https://github.com/EmbarkStudios/cargo-deny"}},"results":[]}]}
+          SARIF
           fi
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+        # v4
+        uses: >-
+          github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13
         if: always()
         with:
           sarif_file: deny-results.sarif
@@ -59,9 +74,13 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        # v0.35.0
+        uses: >-
+          aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: fs
           scan-ref: .
@@ -69,7 +88,9 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+        # v4
+        uses: >-
+          github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13
         if: always()
         with:
           sarif_file: trivy-results.sarif
@@ -84,13 +105,24 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Run Semgrep
-        run: semgrep scan --config p/rust --config p/security-audit --config p/secrets --sarif --output semgrep-results.sarif
+        run: >-
+          semgrep scan
+          --config p/rust
+          --config p/security-audit
+          --config p/secrets
+          --sarif
+          --output semgrep-results.sarif
         env:
-          SEMGREP_RULES: p/rust p/security-audit p/secrets
+          SEMGREP_RULES: >-
+            p/rust p/security-audit p/secrets
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+        # v4
+        uses: >-
+          github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13
         if: always()
         with:
           sarif_file: semgrep-results.sarif
@@ -100,5 +132,9 @@ jobs:
     name: Unused Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: bnjbvr/cargo-machete@7959c845782fed02ee69303126d4a12d64f1db18 # v0.9.1
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      # v0.9.1
+      - uses: >-
+          bnjbvr/cargo-machete@7959c845782fed02ee69303126d4a12d64f1db18
