@@ -1,0 +1,39 @@
+# Maintainer: Kyle Chamberlin <kyle@ktc.sh>
+pkgname=funky
+pkgver=0.0.1
+pkgrel=1
+pkgdesc='Turn command history into reusable shell functions'
+arch=('x86_64' 'aarch64')
+url='https://github.com/KyleChamberlin/funky'
+license=('GPL-3.0-or-later')
+makedepends=('cargo')
+depends=('gcc-libs')
+provides=('funky')
+conflicts=('funky-bin')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+prepare() {
+    cd "$pkgname-$pkgver"
+    export RUSTUP_TOOLCHAIN=stable
+    cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+    cd "$pkgname-$pkgver"
+    export RUSTUP_TOOLCHAIN=stable
+    export CARGO_TARGET_DIR=target
+    cargo build --frozen --release --all-features
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    export RUSTUP_TOOLCHAIN=stable
+    cargo test --frozen --all-features
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/funky"
+    install -Dm644 LICENSE.md "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
