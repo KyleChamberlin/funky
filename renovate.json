@@ -9,6 +9,9 @@
       "automergeType": "pr"
     }
   ],
+  "nix": {
+    "enabled": true
+  },
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,

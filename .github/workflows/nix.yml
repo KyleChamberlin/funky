@@ -1,0 +1,40 @@
+name: Nix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - flake.nix
+      - flake.lock
+      - Cargo.toml
+      - Cargo.lock
+      - "src/**"
+      - .github/workflows/nix.yml
+  pull_request:
+    paths:
+      - flake.nix
+      - flake.lock
+      - Cargo.toml
+      - Cargo.lock
+      - "src/**"
+      - .github/workflows/nix.yml
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: nix-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  nix-build:
+    name: Nix Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: cachix/install-nix-action@616559265b40713947b9c190a8ff4b507b5df49b # v31
+      - run: nix build -L
+      - run: nix flake check -L
