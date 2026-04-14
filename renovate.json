@@ -4,7 +4,7 @@
   "schedule": ["before 11pm", "after 1am"],
   "packageRules": [
     {
-      "matchUpdateTypes": ["major", "minor", "patch"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "automerge": true,
       "automergeType": "pr"
     }
