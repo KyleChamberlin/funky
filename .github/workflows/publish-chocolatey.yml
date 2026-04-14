@@ -1,0 +1,61 @@
+name: Publish Chocolatey
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  chocolatey:
+    name: Publish to Chocolatey
+    runs-on: windows-latest
+    if: ${{ !github.event.release.prerelease }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Get version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          $version = $tag.TrimStart('v')
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Update package with release info
+        shell: pwsh
+        run: ./chocolatey/update.ps1
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_TAG: ${{ steps.version.outputs.tag }}
+
+      - name: Pack
+        shell: pwsh
+        run: choco pack ./chocolatey/funky.nuspec --outputdirectory .
+
+      - name: Validate package
+        shell: pwsh
+        run: |
+          $nupkg = "funky.${{ steps.version.outputs.version }}.nupkg"
+          if (-not (Test-Path $nupkg)) {
+            Write-Error "Expected $nupkg not found"
+            exit 1
+          }
+          $size = (Get-Item $nupkg).Length
+          Write-Host "Package size: $($size / 1KB) KB"
+          if ($size -lt 100) {
+            Write-Error "Package is suspiciously small ($size bytes)"
+            exit 1
+          }
+
+      - name: Push to Chocolatey
+        shell: pwsh
+        run: |
+          choco push funky.${{ steps.version.outputs.version }}.nupkg `
+            --source "https://push.chocolatey.org/" `
+            --api-key ${{ secrets.CHOCOLATEY_API_KEY }}
