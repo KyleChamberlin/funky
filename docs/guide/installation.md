@@ -31,6 +31,18 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/KyleChamberlin/fun
 cargo binstall funky
 ```
 
+## Nix
+
+```sh
+nix profile install github:KyleChamberlin/funky
+```
+
+Or try it without installing:
+
+```sh
+nix run github:KyleChamberlin/funky -- --help
+```
+
 ## From Source
 
 Requires [Rust](https://rustup.rs/) stable:

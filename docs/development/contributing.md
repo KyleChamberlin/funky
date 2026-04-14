@@ -14,6 +14,17 @@ mise install
 cargo build
 ```
 
+### With Nix
+
+If you use [Nix](https://nixos.org/), the flake provides a dev shell with all dependencies:
+
+```sh
+git clone https://github.com/KyleChamberlin/funky.git
+cd funky
+nix develop
+cargo build
+```
+
 ## Tests
 
 ```sh
