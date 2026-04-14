@@ -1,0 +1,9 @@
+{
+  "name": "funky",
+  "manifestUrl": "https://github.com/KyleChamberlin/vfox-funky/releases/download/manifest/manifest.json",
+  "test": {
+    "version": "0.0.1",
+    "check": "funky --version",
+    "resultRegx": "funky 0\\.0\\.1"
+  }
+}
