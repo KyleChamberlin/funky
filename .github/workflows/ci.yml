@@ -40,7 +40,7 @@ jobs:
           toolchain: stable
           components: clippy
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - uses: taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754 # v2
+      - uses: taiki-e/install-action@6e4b50d359005dacdb018fa32c03bc35522c6616 # v2
         with:
           tool: clippy-sarif,sarif-fmt
       - name: Clippy
