@@ -95,7 +95,7 @@ targets = [
   "i686-unknown-linux-gnu",
   "i686-pc-windows-gnu",
 ]
-tap = "kylechamberlin/homebrew-tap"
+tap = "kylechamberlin/homebrew-funky"
 publish-jobs = ["homebrew"]
 github-attestations = true
 
@@ -113,7 +113,8 @@ inherits = "release"
 cargo-dist generates a multi-job workflow following this pipeline:
 
 ```
-plan → build-local-artifacts → host (create GH release) → publish-homebrew-formula → announce
+plan → build-local-artifacts → host (create GH release) → publish-homebrew-formula ─┐
+                                                         → publish-crates-io ────────┤→ announce
 ```
 
 | Job | Purpose |
@@ -121,7 +122,8 @@ plan → build-local-artifacts → host (create GH release) → publish-homebrew
 | `plan` | Compute build matrix, determine which artifacts to produce |
 | `build-local-artifacts` | Matrix build across all targets, produce archives + checksums |
 | `host` | Create GitHub Release, upload all artifacts, generate attestations |
-| `publish-homebrew-formula` | Push updated formula to `kylechamberlin/homebrew-tap` |
+| `publish-homebrew-formula` | Push updated formula to `kylechamberlin/homebrew-funky` |
+| `publish-crates-io` | Publish crate to crates.io (enables `cargo install` and `cargo binstall`) |
 | `announce` | Post-release notifications (if configured) |
 
 ### Installers generated
@@ -130,8 +132,19 @@ plan → build-local-artifacts → host (create GH release) → publish-homebrew
 |-----------|---------------------|
 | **Shell** (`install.sh`) | `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/kylechamberlin/funky/releases/latest/download/funky-installer.sh \| sh` |
 | **PowerShell** (`install.ps1`) | `powershell -ExecutionPolicy ByPass -c "irm https://github.com/kylechamberlin/funky/releases/latest/download/funky-installer.ps1 \| iex"` |
-| **Homebrew** | `brew install kylechamberlin/tap/funky` |
-| **cargo-binstall** | `cargo binstall funky` (metadata auto-generated) |
+| **Homebrew** | `brew install kylechamberlin/funky/funky` |
+| **cargo-binstall** | `cargo binstall funky` (discovers pre-built binaries via crates.io metadata) |
+| **cargo install** | `cargo install funky` (builds from crates.io source) |
+
+### crates.io Publishing
+
+A manual `publish-crates-io` job runs alongside `publish-homebrew-formula` after the GitHub Release is created. It patches `Cargo.toml` with the CalVer version from the tag and runs `cargo publish --no-verify` (verification is skipped because CI already built and tested the release).
+
+This enables two install paths:
+- `cargo install funky` — builds from source published on crates.io
+- `cargo binstall funky` — discovers pre-built release binaries via the `repository` URL in the crate metadata
+
+The job requires a `CARGO_REGISTRY_TOKEN` repository secret (a crates.io API token with publish scope).
 
 ### Build attestations
 
@@ -169,7 +182,9 @@ None — this workflow produces binaries and attestations, not scan results.
 |------|--------|
 | `Cargo.toml` | Add `[workspace.metadata.dist]` + `[profile.dist]` sections (via `cargo dist init`) |
 | `Cargo.toml` | Keep `version = "0.0.0-dev"` — real version injected from tag at CI time |
-| Homebrew tap repo | **Create** `kylechamberlin/homebrew-tap` on GitHub (empty repo, cargo-dist pushes formula) |
+| Homebrew tap repo | **Create** `kylechamberlin/homebrew-funky` on GitHub (empty repo, cargo-dist pushes formula) |
+| `HOMEBREW_TAP_TOKEN` secret | GitHub token with write access to the tap repo |
+| `CARGO_REGISTRY_TOKEN` secret | crates.io API token with publish scope (for `publish-crates-io` job) |
 | `.github/workflows/create_release.yml` | **Delete** — replaced by cargo-dist generated workflow |
 
 ## Differences from Current `create_release.yml`
@@ -188,6 +203,7 @@ None — this workflow produces binaries and attestations, not scan results.
 | Release notes | Empty body | Auto-generated from commits |
 | Version scheme | Unspecified | CalVer `vYYYY.MM.MICRO`, resolved from tag at CI time |
 | Versioning source | Hardcoded in Cargo.toml | Git tag (Cargo.toml patched dynamically) |
+| crates.io | Not published | Published on every release (enables `cargo install` and `cargo binstall`) |
 | Maintenance | Hand-maintained YAML | `dist generate` + re-add version injection steps |
 
 ## Future Enhancements

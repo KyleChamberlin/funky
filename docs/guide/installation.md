@@ -3,7 +3,7 @@
 ## Homebrew <Badge type="tip" text="recommended" />
 
 ```sh
-brew install kylechamberlin/tap/funky
+brew install kylechamberlin/funky/funky
 ```
 
 ## Shell Installer

@@ -95,7 +95,7 @@ Implement in this order to allow incremental validation:
 | 3.3 | Set `Cargo.toml` version to placeholder | `version = "0.0.0-dev"` — real version comes from tag |
 | 3.4 | Run `dist generate` | Generates `.github/workflows/release.yml` |
 | 3.5 | Add "Set version from tag" steps | Inject `sed` step after each checkout in plan, build-local, build-global, host jobs |
-| 3.6 | Create `kylechamberlin/homebrew-tap` repo | Empty repo on GitHub — cargo-dist pushes the formula automatically |
+| 3.6 | Create `kylechamberlin/homebrew-funky` repo | Empty repo on GitHub — cargo-dist pushes the formula automatically |
 | 3.7 | Delete `.github/workflows/create_release.yml` | Old workflow removed |
 | 3.8 | Test with a release tag | Push `v2026.4.0` to validate |
 

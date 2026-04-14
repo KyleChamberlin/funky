@@ -47,7 +47,7 @@ targets = [
   "i686-unknown-linux-gnu",
   "i686-pc-windows-gnu",
 ]
-tap = "kylechamberlin/homebrew-tap"
+tap = "kylechamberlin/homebrew-funky"
 publish-jobs = ["homebrew"]
 github-attestations = true
 
