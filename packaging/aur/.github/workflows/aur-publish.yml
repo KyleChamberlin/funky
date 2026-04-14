@@ -1,0 +1,178 @@
+name: Publish AUR Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without v prefix)'
+        required: true
+
+jobs:
+  update-funky-bin:
+    name: Update funky-bin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << 'EOF'
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            User aur
+          EOF
+
+      - name: Clone AUR repo
+        run: git clone ssh://aur@aur.archlinux.org/funky-bin.git aur-funky-bin
+
+      - name: Update PKGBUILD
+        working-directory: aur-funky-bin
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update pkgver
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+
+          # Download assets and compute checksums
+          X64_URL="https://github.com/KyleChamberlin/funky/releases/download/v${VERSION}/funky-v${VERSION}-linux-x64.zip"
+          AARCH64_URL="https://github.com/KyleChamberlin/funky/releases/download/v${VERSION}/funky-v${VERSION}-linux-aarch64.zip"
+
+          X64_SHA=$(curl -fsSL "$X64_URL" | sha256sum | cut -d' ' -f1)
+          AARCH64_SHA=$(curl -fsSL "$AARCH64_URL" | sha256sum | cut -d' ' -f1)
+
+          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${X64_SHA}')/" PKGBUILD
+          sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${AARCH64_SHA}')/" PKGBUILD
+
+      - name: Generate .SRCINFO and push
+        working-directory: aur-funky-bin
+        run: |
+          # Install makepkg dependencies
+          sudo apt-get update -qq
+          sudo apt-get install -yqq pacman-package-manager libarchive-tools
+
+          # Generate .SRCINFO (use docker if makepkg unavailable)
+          if command -v makepkg &> /dev/null; then
+            makepkg --printsrcinfo > .SRCINFO
+          else
+            # Fallback: generate minimal .SRCINFO manually
+            source PKGBUILD
+            cat > .SRCINFO << SRCEOF
+          pkgbase = funky-bin
+          	pkgdesc = ${pkgdesc}
+          	pkgver = ${pkgver}
+          	pkgrel = ${pkgrel}
+          	url = ${url}
+          	arch = x86_64
+          	arch = aarch64
+          	license = ${license}
+          	depends = gcc-libs
+          	provides = funky
+          	conflicts = funky
+          	source_x86_64 = ${source_x86_64}
+          	sha256sums_x86_64 = ${sha256sums_x86_64}
+          	source_aarch64 = ${source_aarch64}
+          	sha256sums_aarch64 = ${sha256sums_aarch64}
+
+          pkgname = funky-bin
+          SRCEOF
+          fi
+
+          git config user.name "funky-bot"
+          git config user.email "funky-bot@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          git diff --cached --quiet || git commit -m "Update to v${{ steps.version.outputs.version }}"
+          git push
+
+  update-funky:
+    name: Update funky (source)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << 'EOF'
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            User aur
+          EOF
+
+      - name: Clone AUR repo
+        run: git clone ssh://aur@aur.archlinux.org/funky.git aur-funky
+
+      - name: Update PKGBUILD
+        working-directory: aur-funky
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+
+          # Compute source tarball checksum
+          SRC_URL="https://github.com/KyleChamberlin/funky/archive/v${VERSION}.tar.gz"
+          SRC_SHA=$(curl -fsSL "$SRC_URL" | sha256sum | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('${SRC_SHA}')/" PKGBUILD
+
+      - name: Generate .SRCINFO and push
+        working-directory: aur-funky
+        run: |
+          if command -v makepkg &> /dev/null; then
+            makepkg --printsrcinfo > .SRCINFO
+          else
+            source PKGBUILD
+            cat > .SRCINFO << SRCEOF
+          pkgbase = funky
+          	pkgdesc = ${pkgdesc}
+          	pkgver = ${pkgver}
+          	pkgrel = ${pkgrel}
+          	url = ${url}
+          	arch = x86_64
+          	arch = aarch64
+          	license = ${license}
+          	makedepends = cargo
+          	depends = gcc-libs
+          	provides = funky
+          	conflicts = funky-bin
+          	source = funky-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz
+          	sha256sums = ${sha256sums}
+
+          pkgname = funky
+          SRCEOF
+          fi
+
+          git config user.name "funky-bot"
+          git config user.email "funky-bot@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          git diff --cached --quiet || git commit -m "Update to v${{ steps.version.outputs.version }}"
+          git push

@@ -65,6 +65,56 @@ cargo binstall funky
 cargo install --git https://github.com/KyleChamberlin/funky.git
 ```
 
+### aqua
+
+```sh
+aqua g -i KyleChamberlin/funky
+```
+
+### mise
+
+```sh
+mise install funky
+mise use funky@latest
+```
+
+### asdf
+
+```sh
+asdf plugin add funky https://github.com/KyleChamberlin/asdf-funky.git
+asdf install funky latest
+asdf global funky latest
+```
+
+### vfox
+
+```sh
+vfox add funky
+vfox install funky@latest
+```
+
+### AUR (Arch Linux)
+
+```sh
+# Pre-compiled binary
+yay -S funky-bin
+
+# Or build from source
+yay -S funky
+```
+
+### Verify signatures
+
+Release artifacts are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview) keyless signing:
+
+```sh
+cosign verify-blob \
+  --bundle <artifact>.sigstore.json \
+  --certificate-identity="https://github.com/KyleChamberlin/funky/.github/workflows/release.yml@refs/tags/<tag>" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  <artifact>
+```
+
 ## Quick Start
 
 **1. Initialize your shell**

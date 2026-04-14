@@ -1,0 +1,25 @@
+# Maintainer: Kyle Chamberlin <kyle@ktc.sh>
+pkgname=funky-bin
+pkgver=0.0.1
+pkgrel=1
+pkgdesc='Turn command history into reusable shell functions'
+arch=('x86_64' 'aarch64')
+url='https://github.com/KyleChamberlin/funky'
+license=('GPL-3.0-or-later')
+provides=('funky')
+conflicts=('funky')
+depends=('gcc-libs')
+source_x86_64=("${url}/releases/download/v${pkgver}/funky-v${pkgver}-linux-x64.zip")
+source_aarch64=("${url}/releases/download/v${pkgver}/funky-v${pkgver}-linux-aarch64.zip")
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+    # Binary is in a subdirectory after zip extraction
+    if [[ "$CARCH" == "x86_64" ]]; then
+        install -Dm0755 "funky-v${pkgver}-linux-x64/funky" "${pkgdir}/usr/bin/funky"
+    elif [[ "$CARCH" == "aarch64" ]]; then
+        install -Dm0755 "funky-v${pkgver}-linux-aarch64/funky" "${pkgdir}/usr/bin/funky"
+    fi
+    install -Dm644 "funky-v${pkgver}-linux-"*/LICENSE.md "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE" 2>/dev/null || true
+}
