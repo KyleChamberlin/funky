@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>funky</id>
+    <title>funky</title>
+    <version>REPLACE_VERSION</version>
+    <authors>Kyle Chamberlin</authors>
+    <owners>Kyle Chamberlin</owners>
+    <summary>Turn command history into reusable shell functions.</summary>
+    <description>
+Funky saves carefully crafted commands as native shell functions you can call anytime.
+
+No wrappers. No aliases. No runtime. Just a plain shell function.
+
+Features:
+- Zero overhead — functions are native shell functions
+- Instant availability — create a function and use it immediately
+- Plain files — one file per function in ~/.funky/
+- Multiple sources — capture from arguments, history, or stdin
+
+Usage:
+  funky new deploy -- kubectl apply -f manifests/ --namespace production
+  deploy
+    </description>
+    <releaseNotes>https://github.com/KyleChamberlin/funky/releases/tag/vREPLACE_VERSION</releaseNotes>
+    <projectUrl>https://ktc.sh/funky</projectUrl>
+    <projectSourceUrl>https://github.com/KyleChamberlin/funky</projectSourceUrl>
+    <packageSourceUrl>https://github.com/KyleChamberlin/funky/tree/main/chocolatey</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/KyleChamberlin/funky/issues</bugTrackerUrl>
+    <docsUrl>https://ktc.sh/funky</docsUrl>
+    <tags>shell function command-line cli zsh history</tags>
+    <copyright>Copyright (c) Kyle Chamberlin</copyright>
+    <licenseUrl>https://github.com/KyleChamberlin/funky/blob/main/LICENSE.md</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
