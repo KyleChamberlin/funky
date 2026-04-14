@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+current_script_path="${BASH_SOURCE[0]}"
+plugin_dir="$(dirname "$(dirname "${current_script_path}")")"
+
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+if [[ "${ASDF_INSTALL_TYPE:-}" != "version" ]]; then
+  fail "asdf-${TOOL_NAME} supports release installs only"
+fi
+
+mkdir -p "${ASDF_DOWNLOAD_PATH}"
+download_release "${ASDF_INSTALL_VERSION}" "${ASDF_DOWNLOAD_PATH}"
+
+# Extract zip and clean up
+unzip -q "${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}.zip" -d "${ASDF_DOWNLOAD_PATH}" ||
+  fail "Could not extract ${TOOL_NAME}.zip"
+rm -f "${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}.zip"
