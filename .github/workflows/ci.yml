@@ -1,6 +1,7 @@
+---
 name: CI
 
-on:
+"on":
   push:
     branches: [main]
   pull_request:
@@ -19,11 +20,17 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4
+      # v2
+      - uses: >-
+          Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+      # v4
+      - uses: >-
+          jdx/mise-action@1648a7812b9aeae629881980618f079932869151
       - name: Run linters
         run: hk check
 
@@ -34,18 +41,29 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      # stable
+      - uses: >-
+          dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           components: clippy
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-      - uses: taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754 # v2
+      # v2
+      - uses: >-
+          Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+      # v2
+      - uses: >-
+          taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754
         with:
           tool: clippy-sarif,sarif-fmt
       - name: Clippy
         run: >
-          cargo clippy --all-features --all-targets --message-format=json
+          cargo clippy
+          --all-features
+          --all-targets
+          --message-format=json
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt
@@ -53,11 +71,18 @@ jobs:
       - name: Ensure valid SARIF
         if: always()
         run: |
-          if [ ! -s clippy-results.sarif ] || ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" clippy-results.sarif 2>/dev/null; then
-            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"clippy","informationUri":"https://rust-lang.github.io/rust-clippy/"}},"results":[]}]}' > clippy-results.sarif
+          if [ ! -s clippy-results.sarif ] \
+            || ! python3 -c \
+            "import json,sys; json.load(open(sys.argv[1]))" \
+            clippy-results.sarif 2>/dev/null; then
+            cat <<'SARIF' > clippy-results.sarif
+          {"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"clippy","informationUri":"https://rust-lang.github.io/rust-clippy/"}},"results":[]}]}
+          SARIF
           fi
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
+        # v4
+        uses: >-
+          github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13
         if: always()
         with:
           sarif_file: clippy-results.sarif
@@ -93,14 +118,20 @@ jobs:
             required: false
     continue-on-error: ${{ !matrix.required }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: >-
+          dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: ${{ matrix.rust }}
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      # v2
+      - uses: >-
+          Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
         with:
           shared-key: ${{ matrix.build }}
-          save-if: ${{ github.ref == 'refs/heads/main' }}
+          save-if: >-
+            ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --no-fail-fast
 
   gate:
@@ -109,7 +140,9 @@ jobs:
     needs: [lint, clippy-sarif, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+      # v1.2.2
+      - uses: >-
+          re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
         with:
           jobs: ${{ toJSON(needs) }}
 
@@ -121,15 +154,30 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Generate app token
+        id: app-token
+        # v2.2.2
+        uses: >-
+          actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.FUNKY_RELEASE_BOT_IT }}
+          private-key: ${{ secrets.FUNKY_RELEASE_BOT_KEY }}
+      # v6
+      - uses: >-
+          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          token: ${{ steps.app-token.outputs.token }}
       - name: Compute calver tag
         id: calver
-        uses: amitsingh-007/next-release-tag@ccca26be97e8a3e33f50ec71a42bdd596cbc249f # v6.5.0
+        # v6.5.0
+        uses: >-
+          amitsingh-007/next-release-tag@ccca26be97e8a3e33f50ec71a42bdd596cbc249f
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag_prefix: v
           tag_template: yyyy.mm.i
       - name: Push tag
         run: |
-          git tag "${{ steps.calver.outputs.next_release_tag }}" "${{ github.sha }}"
-          git push origin "${{ steps.calver.outputs.next_release_tag }}"
+          TAG=${{ steps.calver.outputs.next_release_tag }}
+          git tag "$TAG" "${{ github.sha }}"
+          git push origin "$TAG"
