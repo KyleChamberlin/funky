@@ -23,16 +23,11 @@ name: Release
 permissions:
   "contents": "write"
 
-# This task will run whenever you push a git tag
-# that looks like a version like "1.0.0",
-# "v0.1.0-prerelease.1", "my-app/0.1.0",
-# "releases/v1.0.0", etc.
-# Various formats will be parsed into a VERSION
-# and an optional PACKAGE_NAME, where
-# PACKAGE_NAME must be the name of a Cargo
-# package in your workspace, and VERSION must be
-# a Cargo-style SemVer Version (must have at
-# least major.minor.patch).
+# This task will run whenever you push a git tag that looks like a version
+# like "1.0.0", "v0.1.0-prerelease.1", "my-app/0.1.0", "releases/v1.0.0", etc.
+# Various formats will be parsed into a VERSION and an optional PACKAGE_NAME, where
+# PACKAGE_NAME must be the name of a Cargo package in your workspace, and VERSION
+# must be a Cargo-style SemVer Version (must have at least major.minor.patch).
 #
 # If PACKAGE_NAME is specified, then the
 # announcement will be for that package (erroring
@@ -46,47 +41,32 @@ permissions:
 # one dist-able package, or with all dist-able
 # packages versioned/released in lockstep).
 #
-# If you push multiple tags at once, separate
-# instances of this workflow will spin up,
-# creating an independent announcement for each
-# one. However, GitHub will hard limit this to 3
-# tags per commit, as it will assume more tags is
-# a mistake.
+# If you push multiple tags at once, separate instances of this workflow will
+# spin up, creating an independent announcement for each one. However, GitHub
+# will hard limit this to 3 tags per commit, as it will assume more tags is a
+# mistake.
 #
-# If there's a prerelease-style suffix to the
-# version, then the release(s) will be marked as
-# a prerelease.
-"on":
+# If there's a prerelease-style suffix to the version, then the release(s)
+# will be marked as a prerelease.
+on:
   push:
     tags:
-      - '**[0-9]+.[0-9]+.[0-9]+*'
+      - "**[0-9]+.[0-9]+.[0-9]+*"
 
 jobs:
   # Run 'dist plan' (or host) to determine what
   # tasks we need to do
   plan:
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
-      tag: >-
-        ${{
-          !github.event.pull_request
-          && github.ref_name || ''
-        }}
-      tag-flag: >-
-        ${{
-          !github.event.pull_request
-          && format('--tag={0}',
-          github.ref_name) || ''
-        }}
-      publishing: >-
-        ${{ !github.event.pull_request }}
+      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
+      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
+      publishing: ${{ !github.event.pull_request }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
@@ -94,9 +74,7 @@ jobs:
         if: ${{ !github.event.pull_request }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          sed -i \
-            's/^version = .*/version = "'"$VERSION"'"/' \
-            Cargo.toml
+          sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
       - name: Install dist
         # we specify bash to get pipefail; it
         # guards against the `curl` command
@@ -113,9 +91,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 \
             -LsSf "${DIST_URL}" | sh
       - name: Cache dist
-        # v7
-        uses: >-
-          actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: cargo-dist-cache
           path: ~/.cargo/bin/dist
@@ -133,27 +109,14 @@ jobs:
       # right.)
       - id: plan
         run: |
-          if [ "${{ !github.event.pull_request }}" = "true" ]; then
-            REF="${{ github.ref_name }}"
-            dist host \
-              --steps=create \
-              "--tag=${REF}" \
-              --output-format=json \
-              > plan-dist-manifest.json
-          else
-            dist plan \
-              --output-format=json \
-              > plan-dist-manifest.json
-          fi
+          dist ${{ (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
           echo "dist ran successfully"
           cat plan-dist-manifest.json
           echo "manifest=$(jq -c "." \
             plan-dist-manifest.json)" \
             >> "$GITHUB_OUTPUT"
       - name: "Upload dist-manifest.json"
-        # v7
-        uses: >-
-          actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: artifacts-plan-dist-manifest
           path: plan-dist-manifest.json
@@ -168,15 +131,7 @@ jobs:
     # (currently very blunt)
     needs:
       - plan
-    if: >-
-      ${{
-        fromJson(
-          needs.plan.outputs.val
-        ).ci.github.artifacts_matrix.include
-        != null
-        && (needs.plan.outputs.publishing == 'true'
-        || fromJson(needs.plan.outputs.val).ci.github.pr_run_mode == 'upload')
-      }}
+    if: ${{ fromJson(needs.plan.outputs.val).ci.github.artifacts_matrix.include != null && (needs.plan.outputs.publishing == 'true' || fromJson(needs.plan.outputs.val).ci.github.pr_run_mode == 'upload') }}
     strategy:
       fail-fast: false
       # Target platforms/runners are computed by
@@ -219,27 +174,18 @@ jobs:
       - name: enable windows longpaths
         run: |
           git config --global core.longpaths true
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
       - name: Set version from tag
-        if: >-
-          ${{
-            needs.plan.outputs.publishing == 'true'
-          }}
+        if: ${{ needs.plan.outputs.publishing == 'true' }}
         shell: bash
         run: |
           VERSION="${{ needs.plan.outputs.tag }}"
           VERSION="${VERSION#v}"
-          sed -i \
-            's/^version = .*/version = "'"$VERSION"'"/' \
-            Cargo.toml
-      - name: >-
-          Install Rust non-interactively if not
-          already installed
+          sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
+      - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |
           if ! command -v cargo > /dev/null 2>&1; then
@@ -253,9 +199,7 @@ jobs:
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest
       - name: Fetch local artifacts
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: artifacts-*
           path: target/distrib/
@@ -275,9 +219,7 @@ jobs:
             > dist-manifest.json
           echo "dist ran successfully"
       - name: Attest
-        # v4
-        uses: >-
-          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
         with:
           subject-path: >-
             target/distrib/*${{
@@ -303,9 +245,7 @@ jobs:
           cp dist-manifest.json \
             "$BUILD_MANIFEST_NAME"
       - name: "Upload artifacts"
-        # v7
-        uses: >-
-          actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: >-
             artifacts-build-local-${{
@@ -321,33 +261,24 @@ jobs:
     needs:
       - plan
       - build-local-artifacts
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-22.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: >-
         target/distrib/global-dist-manifest.json
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
       - name: Set version from tag
-        if: >-
-          ${{
-            needs.plan.outputs.publishing == 'true'
-          }}
+        if: ${{ needs.plan.outputs.publishing == 'true' }}
         run: |
           VERSION="${{ needs.plan.outputs.tag }}"
           VERSION="${VERSION#v}"
-          sed -i \
-            's/^version = .*/version = "'"$VERSION"'"/' \
-            Cargo.toml
+          sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
       - name: Install cached dist
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: cargo-dist-cache
           path: ~/.cargo/bin/
@@ -355,9 +286,7 @@ jobs:
       # Get all the local artifacts for the
       # global tasks to use (for e.g. checksums)
       - name: Fetch local artifacts
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: artifacts-*
           path: target/distrib/
@@ -383,9 +312,7 @@ jobs:
           cp dist-manifest.json \
             "$BUILD_MANIFEST_NAME"
       - name: "Upload artifacts"
-        # v7
-        uses: >-
-          actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: artifacts-build-global
           path: |
@@ -416,13 +343,11 @@ jobs:
       }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       val: ${{ steps.host.outputs.manifest }}
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
@@ -430,22 +355,16 @@ jobs:
         run: |
           VERSION="${{ needs.plan.outputs.tag }}"
           VERSION="${VERSION#v}"
-          sed -i \
-            's/^version = .*/version = "'"$VERSION"'"/' \
-            Cargo.toml
+          sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
       - name: Install cached dist
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: cargo-dist-cache
           path: ~/.cargo/bin/
       - run: chmod +x ~/.cargo/bin/dist
       # Fetch artifacts from scratch-storage
       - name: Fetch artifacts
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: artifacts-*
           path: target/distrib/
@@ -464,9 +383,7 @@ jobs:
             dist-manifest.json)" \
             >> "$GITHUB_OUTPUT"
       - name: "Upload dist-manifest.json"
-        # v7
-        uses: >-
-          actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           # Overwrite the previous copy
           name: artifacts-dist-manifest
@@ -474,9 +391,7 @@ jobs:
       # Create a GitHub Release while uploading
       # all files to it
       - name: "Download GitHub Artifacts"
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: artifacts-*
           path: artifacts
@@ -525,7 +440,7 @@ jobs:
     needs:
       - plan
       - host
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-22.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PLAN: ${{ needs.plan.outputs.val }}
@@ -541,9 +456,7 @@ jobs:
         ).publish_prereleases
       }}
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: true
           repository: "kylechamberlin/homebrew-tap"
@@ -551,9 +464,7 @@ jobs:
             ${{ secrets.HOMEBREW_TAP_TOKEN }}
       # So we have access to the formula
       - name: Fetch homebrew formulae
-        # v8
-        uses: >-
-          actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: artifacts-*
           path: Formula/
@@ -597,22 +508,14 @@ jobs:
               done
           git push
 
-  # NOTE: This job is NOT auto-generated by
-  # cargo-dist.
-  # After running `cargo dist init`, this job
-  # must be manually re-added.
+  # NOTE: This job is NOT auto-generated by cargo-dist.
+  # After running `cargo dist init`, this job must be manually re-added.
   # See packaging/README.md for details.
   sign-artifacts:
     needs:
       - plan
       - host
-    if: >-
-      ${{
-        always()
-        && needs.plan.result == 'success'
-        && needs.plan.outputs.publishing == 'true'
-        && needs.host.result == 'success'
-      }}
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && needs.host.result == 'success' }}
     runs-on: "ubuntu-24.04"
     permissions:
       "id-token": "write"
@@ -620,46 +523,25 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
       - name: Install cosign
-        # v4.1.1
-        uses: >-
-          sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
       - name: Download release assets
         run: |
-          TAG="${{ needs.plan.outputs.tag }}"
-          REPO="${{ github.repository }}"
-          gh release download "${TAG}" \
-            --repo "${REPO}" \
-            --dir artifacts \
-            --pattern '*.zip' \
-            --pattern '*.tar.gz' \
-            --pattern '*-installer.sh' \
-            --pattern '*-installer.ps1' \
-            --pattern '*.rb'
+          gh release download "${{ needs.plan.outputs.tag }}" --repo ${{ github.repository }} --dir artifacts --pattern '*.zip' --pattern '*.tar.gz' --pattern '*-installer.sh' --pattern '*-installer.ps1' --pattern '*.rb'
       - name: Sign artifacts with cosign
         run: |
           for f in artifacts/*; do
             # Skip dist-manifest.json if present
-            BASE="$(basename "$f")"
-            [[ "${BASE}" == \
-              "dist-manifest.json" ]] \
-              && continue
-            cosign sign-blob --yes "$f" \
-              --bundle "${f}.sigstore.json"
+            [[ "$(basename "$f")" == "dist-manifest.json" ]] && continue
+            cosign sign-blob --yes "$f" --bundle "${f}.sigstore.json"
           done
       - name: Upload signatures to release
         run: |
-          TAG="${{ needs.plan.outputs.tag }}"
-          REPO="${{ github.repository }}"
-          gh release upload "${TAG}" \
-            --repo "${REPO}" \
-            artifacts/*.sigstore.json
+          gh release upload "${{ needs.plan.outputs.tag }}" --repo ${{ github.repository }} artifacts/*.sigstore.json
 
   announce:
     needs:
@@ -667,32 +549,15 @@ jobs:
       - host
       - publish-homebrew-formula
       - sign-artifacts
-    # use "always() && ..." to allow us to wait
-    # for all publish jobs while still allowing
-    # individual publish jobs to skip themselves
-    # (for prereleases).
-    # "host" however must run to completion, no
-    # skipping allowed!
-    if: >-
-      ${{
-        always()
-        && needs.host.result == 'success'
-        && (needs.publish-homebrew-formula.result
-        == 'skipped'
-        || needs.publish-homebrew-formula.result
-        == 'success')
-        && (needs.sign-artifacts.result
-        == 'skipped'
-        || needs.sign-artifacts.result
-        == 'success')
-      }}
+    # use "always() && ..." to allow us to wait for all publish jobs while
+    # still allowing individual publish jobs to skip themselves (for prereleases).
+    # "host" however must run to completion, no skipping allowed!
+    if: ${{ always() && needs.host.result == 'success' && (needs.publish-homebrew-formula.result == 'skipped' || needs.publish-homebrew-formula.result == 'success') && (needs.sign-artifacts.result == 'skipped' || needs.sign-artifacts.result == 'success') }}
     runs-on: "ubuntu-24.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      # v6
-      - uses: >-
-          actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           submodules: recursive
