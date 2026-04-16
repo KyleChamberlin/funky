@@ -3,11 +3,12 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "Funky",
   description: "Turn command history into reusable shell functions.",
+  base: "/funky/",
   cleanUrls: true,
   srcExclude: ["workflows/**"],
 
   head: [
-    ["link", { rel: "icon", type: "image/svg+xml", href: "/funky-icon.svg" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: "/funky/funky-icon.svg" }],
     ["meta", { name: "theme-color", content: "#7c3aed" }],
     [
       "meta",

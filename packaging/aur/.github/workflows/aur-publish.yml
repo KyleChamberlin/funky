@@ -1,12 +1,13 @@
+---
 name: Publish AUR Packages
 
-on:
+"on":
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (without v prefix)'
+        description: "Version to publish (without v prefix)"
         required: true
 
 jobs:
@@ -14,13 +15,17 @@ jobs:
     name: Update funky-bin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v4
+      - uses: >-
+          actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Determine version
         id: version
         run: |
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ -n "$VERSION" ]]; then
+            echo "version=$VERSION" \
+              >> "$GITHUB_OUTPUT"
           else
             TAG="${{ github.event.release.tag_name }}"
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
@@ -51,14 +56,20 @@ jobs:
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
           # Download assets and compute checksums
-          X64_URL="https://github.com/KyleChamberlin/funky/releases/download/v${VERSION}/funky-v${VERSION}-linux-x64.zip"
-          AARCH64_URL="https://github.com/KyleChamberlin/funky/releases/download/v${VERSION}/funky-v${VERSION}-linux-aarch64.zip"
+          BASE="https://github.com/KyleChamberlin/funky"
+          BASE="${BASE}/releases/download/v${VERSION}"
+          X64_URL="${BASE}/funky-v${VERSION}-linux-x64.zip"
+          AARCH64_URL="${BASE}/funky-v${VERSION}-linux-aarch64.zip"
 
           X64_SHA=$(curl -fsSL "$X64_URL" | sha256sum | cut -d' ' -f1)
           AARCH64_SHA=$(curl -fsSL "$AARCH64_URL" | sha256sum | cut -d' ' -f1)
 
-          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${X64_SHA}')/" PKGBUILD
-          sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${AARCH64_SHA}')/" PKGBUILD
+          sed -i \
+            "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${X64_SHA}')/" \
+            PKGBUILD
+          sed -i \
+            "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${AARCH64_SHA}')/" \
+            PKGBUILD
 
       - name: Generate .SRCINFO and push
         working-directory: aur-funky-bin
@@ -97,20 +108,26 @@ jobs:
           git config user.name "funky-bot"
           git config user.email "funky-bot@users.noreply.github.com"
           git add PKGBUILD .SRCINFO
-          git diff --cached --quiet || git commit -m "Update to v${{ steps.version.outputs.version }}"
+          VER="${{ steps.version.outputs.version }}"
+          git diff --cached --quiet || \
+            git commit -m "Update to v${VER}"
           git push
 
   update-funky:
     name: Update funky (source)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v4
+      - uses: >-
+          actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Determine version
         id: version
         run: |
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ -n "$VERSION" ]]; then
+            echo "version=$VERSION" \
+              >> "$GITHUB_OUTPUT"
           else
             TAG="${{ github.event.release.tag_name }}"
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
@@ -140,7 +157,8 @@ jobs:
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
           # Compute source tarball checksum
-          SRC_URL="https://github.com/KyleChamberlin/funky/archive/v${VERSION}.tar.gz"
+          BASE="https://github.com/KyleChamberlin/funky"
+          SRC_URL="${BASE}/archive/v${VERSION}.tar.gz"
           SRC_SHA=$(curl -fsSL "$SRC_URL" | sha256sum | cut -d' ' -f1)
           sed -i "s/^sha256sums=.*/sha256sums=('${SRC_SHA}')/" PKGBUILD
 
@@ -174,5 +192,7 @@ jobs:
           git config user.name "funky-bot"
           git config user.email "funky-bot@users.noreply.github.com"
           git add PKGBUILD .SRCINFO
-          git diff --cached --quiet || git commit -m "Update to v${{ steps.version.outputs.version }}"
+          VER="${{ steps.version.outputs.version }}"
+          git diff --cached --quiet || \
+            git commit -m "Update to v${VER}"
           git push
