@@ -112,24 +112,3 @@ jobs:
       - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
         with:
           jobs: ${{ toJSON(needs) }}
-
-  tag:
-    name: Tag
-    if: github.ref == 'refs/heads/main'
-    needs: [gate]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Compute calver tag
-        id: calver
-        uses: amitsingh-007/next-release-tag@ccca26be97e8a3e33f50ec71a42bdd596cbc249f # v6.5.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag_prefix: v
-          tag_template: yyyy.mm.i
-      - name: Push tag
-        run: |
-          git tag "${{ steps.calver.outputs.next_release_tag }}" "${{ github.sha }}"
-          git push origin "${{ steps.calver.outputs.next_release_tag }}"

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Automated release pipeline powered by [cargo-dist](https://github.com/axodotdev/cargo-dist) (axo.dev). Triggered by CalVer tags. Builds cross-platform binaries, generates checksums and installers, creates signed attestations, and publishes to GitHub Releases.
+Automated release pipeline powered by [cargo-dist](https://github.com/axodotdev/cargo-dist) (axo.dev). Triggered via `workflow_dispatch` from the Prep Release workflow. Builds cross-platform binaries, generates checksums and installers, creates signed attestations, and publishes to GitHub Releases.
 
 ## Versioning Scheme
 
@@ -20,31 +20,35 @@ This is a distributed binary, not a library — there are no semver compatibilit
 
 ### Dynamic Version Resolution
 
-`Cargo.toml` carries a dev placeholder (`version = "0.0.0-dev"`). The real version is injected at CI time from the git tag. Each job in the release workflow patches `Cargo.toml` after checkout:
+`Cargo.toml` carries a dev placeholder (`version = "0.0.0-dev"`) between releases. The Prep Release workflow (`prep-release.yml`) bumps this to the real CalVer version, commits, tags, and pushes before dispatching the release. cargo-dist then builds against the committed version — no build-time patching needed.
 
-```bash
-VERSION="${GITHUB_REF_NAME#v}"
-sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
-```
-
-This means **you never manually bump the version in Cargo.toml**. The tag is the single source of truth.
+This means **you never manually bump the version in Cargo.toml**. The prep workflow handles it.
 
 ## Release Process
 
 ```bash
-# 1. Tag the release
-git tag v2026.4.0
+# Option 1: GitHub Actions UI
+# Go to Actions → Prep Release → Run workflow
 
-# 2. Push the tag (triggers the release workflow)
-git push --tags
+# Option 2: CLI
+gh workflow run prep-release.yml
 ```
 
-That's it. The workflow extracts `2026.4.0` from the tag, patches Cargo.toml, and cargo-dist handles the rest.
+The Prep Release workflow:
+1. Computes the next CalVer tag (e.g., `v2026.4.0`)
+2. Updates `Cargo.toml` and `Cargo.lock` with the version
+3. Commits, tags, and pushes to `main`
+4. Dispatches `release.yml` with the tag
 
-**Note:** If cargo-dist config changes, regenerate and re-apply the version injection steps:
+cargo-dist then runs its full pipeline: plan → build → host → publish → announce.
+
+To update cargo-dist config:
+
 ```bash
+# Edit [workspace.metadata.dist] in Cargo.toml, then:
 dist generate
-# Then re-add "Set version from tag" steps to the generated workflow
+# Commit the changes — no manual patching needed
+# (allow-dirty = ["ci"] tolerates Renovate digest pinning)
 ```
 
 ## cargo-dist
@@ -98,6 +102,8 @@ targets = [
 tap = "kylechamberlin/homebrew-tap"
 publish-jobs = ["homebrew"]
 github-attestations = true
+dispatch-releases = true
+allow-dirty = ["ci"]
 
 [profile.dist]
 inherits = "release"
@@ -144,11 +150,13 @@ gh attestation verify funky-v2026.4.0-x86_64-unknown-linux-gnu.tar.gz \
 
 ### Maintenance
 
-The generated `release.yml` has one manual addition: "Set version from tag" steps that patch `Cargo.toml` at CI time. When regenerating the workflow:
+The generated `release.yml` has manual modifications for `workflow_dispatch` trigger support (matching cargo-dist's `dispatch-releases` template). The `allow-dirty = ["ci"]` config in `Cargo.toml` prevents cargo-dist from rejecting these modifications or Renovate digest pinning during PR checks.
+
+When regenerating the workflow:
 
 1. Edit `[workspace.metadata.dist]` in `Cargo.toml`
 2. Run `dist generate` to regenerate the workflow
-3. Re-add the "Set version from tag" steps after each `actions/checkout` in the `plan`, `build-local-artifacts`, `build-global-artifacts`, and `host` jobs
+3. Re-apply the `workflow_dispatch` trigger changes (see the git diff of the initial setup for reference)
 4. Commit both changes together
 
 To update cargo-dist itself:
@@ -156,8 +164,9 @@ To update cargo-dist itself:
 ```bash
 mise upgrade cargo:cargo-dist
 dist generate
-# Re-add version injection steps
 ```
+
+**Note:** The previous `sign-artifacts` job (cosign keyless signing) was not part of cargo-dist's generated output and was removed during regeneration. Re-add it manually if needed.
 
 ## SARIF Outputs
 
@@ -168,7 +177,7 @@ None — this workflow produces binaries and attestations, not scan results.
 | File | Action |
 |------|--------|
 | `Cargo.toml` | Add `[workspace.metadata.dist]` + `[profile.dist]` sections (via `cargo dist init`) |
-| `Cargo.toml` | Keep `version = "0.0.0-dev"` — real version injected from tag at CI time |
+| `Cargo.toml` | Keep `version = "0.0.0-dev"` — bumped by Prep Release workflow before each release |
 | Homebrew tap repo | **Create** `kylechamberlin/homebrew-tap` on GitHub (empty repo, cargo-dist pushes formula) |
 | `.github/workflows/create_release.yml` | **Delete** — replaced by cargo-dist generated workflow |
 
@@ -186,12 +195,12 @@ None — this workflow produces binaries and attestations, not scan results.
 | Homebrew | None | Auto-published to tap repo |
 | cargo-binstall | None | Supported out of the box |
 | Release notes | Empty body | Auto-generated from commits |
-| Version scheme | Unspecified | CalVer `vYYYY.MM.MICRO`, resolved from tag at CI time |
-| Versioning source | Hardcoded in Cargo.toml | Git tag (Cargo.toml patched dynamically) |
-| Maintenance | Hand-maintained YAML | `dist generate` + re-add version injection steps |
+| Version scheme | Unspecified | CalVer `vYYYY.MM.MICRO`, committed to Cargo.toml before release |
+| Versioning source | Hardcoded in Cargo.toml | Prep Release workflow bumps Cargo.toml, commits, then dispatches cargo-dist |
+| Maintenance | Hand-maintained YAML | `dist generate` (allow-dirty tolerates Renovate pinning) |
 
 ## Future Enhancements
 
 - **cargo-auditable:** Add `cargo auditable build` as a custom build step to embed dependency info in binaries (enables post-build vulnerability scanning by Trivy/Grype)
 - **Additional targets:** `aarch64-pc-windows-msvc` (Windows ARM) when runners become available
-- **Release automation:** Consider a mise task to automate the tag + push flow
+- **Cosign signing:** Re-add the `sign-artifacts` job for keyless cosign signing of release artifacts
