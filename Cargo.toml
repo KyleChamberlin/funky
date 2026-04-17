@@ -50,6 +50,8 @@ targets = [
 tap = "kylechamberlin/homebrew-tap"
 publish-jobs = ["homebrew"]
 github-attestations = true
+dispatch-releases = true
+allow-dirty = ["ci"]
 
 [profile.dist]
 inherits = "release"
