@@ -42,6 +42,7 @@ export default defineConfig({
           { text: "new", link: "/reference/new" },
           { text: "list", link: "/reference/list" },
           { text: "edit", link: "/reference/edit" },
+          { text: "usage", link: "/reference/usage" },
           { text: "Configuration", link: "/reference/configuration" },
         ],
       },

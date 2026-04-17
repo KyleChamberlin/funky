@@ -26,6 +26,8 @@ pub enum Command {
   New(NewArgs),
   List,
   Edit(EditArgs),
+  #[command(hide = true)]
+  Usage,
 }
 
 #[derive(Debug, Parser)]
