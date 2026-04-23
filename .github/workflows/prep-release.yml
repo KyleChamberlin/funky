@@ -1,0 +1,51 @@
+name: Prep Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+
+      - name: Compute calver tag
+        id: calver
+        uses: amitsingh-007/next-release-tag@v6.5.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: v
+          tag_template: yyyy.mm.i
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Set version in Cargo.toml
+        run: |
+          TAG="${{ steps.calver.outputs.next_release_tag }}"
+          VERSION="${TAG#v}"
+          sed -i 's/^version = .*/version = "'"$VERSION"'"/' Cargo.toml
+          cargo generate-lockfile
+
+      - name: Commit and tag
+        run: |
+          TAG="${{ steps.calver.outputs.next_release_tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore: release ${TAG} [skip ci]"
+          git tag "${TAG}"
+          git push --atomic origin main "${TAG}"
+
+      - name: Trigger release workflow
+        run: |
+          gh workflow run release.yml -f "tag=${{ steps.calver.outputs.next_release_tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

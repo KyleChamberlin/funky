@@ -145,7 +145,6 @@ jobs:
           re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
         with:
           jobs: ${{ toJSON(needs) }}
-
   tag:
     name: Tag
     if: github.ref == 'refs/heads/main'
@@ -173,11 +172,10 @@ jobs:
         uses: >-
           amitsingh-007/next-release-tag@ccca26be97e8a3e33f50ec71a42bdd596cbc249f
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           tag_prefix: v
           tag_template: yyyy.mm.i
       - name: Push tag
         run: |
-          TAG=${{ steps.calver.outputs.next_release_tag }}
-          git tag "$TAG" "${{ github.sha }}"
-          git push origin "$TAG"
+          git tag "${{ steps.calver.outputs.next_release_tag }}" "${{ github.sha }}"
+          git push origin "${{ steps.calver.outputs.next_release_tag }}"
