@@ -65,7 +65,7 @@ jobs:
   # Run 'dist plan' (or host) to determine what
   # tasks we need to do
   plan:
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
       tag: >-
@@ -321,7 +321,7 @@ jobs:
     needs:
       - plan
       - build-local-artifacts
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: >-
@@ -416,7 +416,7 @@ jobs:
       }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     outputs:
       val: ${{ steps.host.outputs.manifest }}
     steps:
@@ -525,7 +525,7 @@ jobs:
     needs:
       - plan
       - host
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PLAN: ${{ needs.plan.outputs.val }}
@@ -613,7 +613,7 @@ jobs:
         && needs.plan.outputs.publishing == 'true'
         && needs.host.result == 'success'
       }}
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     permissions:
       "id-token": "write"
       "contents": "write"
@@ -686,7 +686,7 @@ jobs:
         || needs.sign-artifacts.result
         == 'success')
       }}
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-26.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
